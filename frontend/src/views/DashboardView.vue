@@ -322,9 +322,9 @@ async function fetchDashboardData() {
     if (stockBajo.value.length > 0) {
       newAlertas.push({ 
         id: Date.now() + '-stock', 
-        type: 'warning', 
-        title: 'Stock Bajo', 
-        message: `Hay ${stockBajo.value.length} repuestos bajo mínimo.` 
+        type: 'error', 
+        title: 'Stock Crítico', 
+        message: `Hay ${stockBajo.value.length} repuestos bajo o igual al mínimo.` 
       })
     }
     if (ordenesSinMecanico.value.length > 0) {

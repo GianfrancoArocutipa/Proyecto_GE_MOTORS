@@ -122,7 +122,7 @@ const repuestoForm = reactive({
   categoria: '',
   marca_fabricante: '',
   stock: 0,
-  stock_minimo: 0,
+  stock_minimo: '',
   precio_unitario: 0
 })
 
@@ -235,7 +235,7 @@ function openDetailModal(repuesto) {
 }
 
 function resetRepuestoForm() {
-  Object.assign(repuestoForm, { codigo_oem: '', nombre: '', descripcion: '', categoria: '', marca_fabricante: '', stock: 0, stock_minimo: 0, precio_unitario: 0 })
+  Object.assign(repuestoForm, { codigo_oem: '', nombre: '', descripcion: '', categoria: '', marca_fabricante: '', stock: 0, stock_minimo: '', precio_unitario: 0 })
   editingRepuesto.value = null
   showCreateRepuestoModal.value = false
   oemError.value = ''

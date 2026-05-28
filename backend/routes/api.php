@@ -92,44 +92,41 @@ if (preg_match('#auth/login#', $uri) && $method === 'POST') {
 }
 
 // Rutas de Clientes
-elseif (preg_match('#clientes(?:/(.*))?#', $uri, $matches) && $method === 'GET') {
-    if (isset($matches[1]) && is_numeric($matches[1])) {
-        // GET /api/clientes/{id}
-        callController('ClienteController', 'show', [(int)$matches[1]]);
-    } elseif (isset($matches[1]) && $matches[1] === 'vehiculos' && preg_match('#clientes/(\d+)/vehiculos#', $uri, $vehMatches)) {
-        // GET /api/clientes/{id}/vehiculos
-        callController('ClienteController', 'getVehiculos', [(int)$vehMatches[1]]);
-    } elseif (isset($matches[1]) && $matches[1] === 'historial' && preg_match('#clientes/(\d+)/historial#', $uri, $histMatches)) {
-        // GET /api/clientes/{id}/historial
-        callController('ClienteController', 'getHistorial', [(int)$histMatches[1]]);
-    } else {
-        // GET /api/clientes
-        callController('ClienteController', 'index');
-    }
-} elseif (preg_match('#clientes#', $uri) && $method === 'POST') {
+elseif (preg_match('#clientes/(\d+)/historial#', $uri, $matches) && $method === 'GET') {
+    // GET /api/clientes/{id}/historial — debe ir antes de la ruta genérica {id}
+    callController('ClienteController', 'getHistorial', [(int)$matches[1]]);
+} elseif (preg_match('#clientes/(\d+)/vehiculos#', $uri, $matches) && $method === 'GET') {
+    // GET /api/clientes/{id}/vehiculos
+    callController('ClienteController', 'getVehiculos', [(int)$matches[1]]);
+} elseif (preg_match('#clientes/(\d+)$#', $uri, $matches) && $method === 'GET') {
+    // GET /api/clientes/{id}
+    callController('ClienteController', 'show', [(int)$matches[1]]);
+} elseif (preg_match('#clientes$#', $uri) && $method === 'GET') {
+    // GET /api/clientes
+    callController('ClienteController', 'index');
+} elseif (preg_match('#clientes$#', $uri) && $method === 'POST') {
     // POST /api/clientes
     callController('ClienteController', 'create');
-} elseif (preg_match('#clientes/(\d+)#', $uri, $matches) && $method === 'PUT') {
+} elseif (preg_match('#clientes/(\d+)$#', $uri, $matches) && $method === 'PUT') {
     // PUT /api/clientes/{id}
     callController('ClienteController', 'update', [(int)$matches[1]]);
 }
 
 // Rutas de Vehículos
-elseif (preg_match('#vehiculos(?:/(.*))?#', $uri, $matches) && $method === 'GET') {
-    if (isset($matches[1]) && is_numeric($matches[1])) {
-        // GET /api/vehiculos/{id}
-        callController('VehiculoController', 'show', [(int)$matches[1]]);
-    } elseif (isset($matches[1]) && $matches[1] === 'diagnosticos' && preg_match('#vehiculos/(\d+)/diagnosticos#', $uri, $diagMatches)) {
-        // GET /api/vehiculos/{id}/diagnosticos
-        callController('VehiculoController', 'getDiagnosticos', [(int)$diagMatches[1]]);
-    } else {
-        // GET /api/vehiculos
-        callController('VehiculoController', 'index');
-    }
-} elseif (preg_match('#vehiculos#', $uri) && $method === 'POST') {
+// Rutas de Vehículos
+elseif (preg_match('#vehiculos/(\d+)/diagnosticos#', $uri, $matches) && $method === 'GET') {
+    // GET /api/vehiculos/{id}/diagnosticos — debe ir antes de la ruta genérica {id}
+    callController('VehiculoController', 'getDiagnosticos', [(int)$matches[1]]);
+} elseif (preg_match('#vehiculos/(\d+)$#', $uri, $matches) && $method === 'GET') {
+    // GET /api/vehiculos/{id}
+    callController('VehiculoController', 'show', [(int)$matches[1]]);
+} elseif (preg_match('#vehiculos$#', $uri) && $method === 'GET') {
+    // GET /api/vehiculos
+    callController('VehiculoController', 'index');
+} elseif (preg_match('#vehiculos$#', $uri) && $method === 'POST') {
     // POST /api/vehiculos
     callController('VehiculoController', 'create');
-} elseif (preg_match('#vehiculos/(\d+)#', $uri, $matches) && $method === 'PUT') {
+} elseif (preg_match('#vehiculos/(\d+)$#', $uri, $matches) && $method === 'PUT') {
     // PUT /api/vehiculos/{id}
     callController('VehiculoController', 'update', [(int)$matches[1]]);
 }

@@ -239,7 +239,7 @@ class VehiculoController
                 'numero_ot'       => $numeroOt,
                 'mecanico_nombre' => $mecanicoNombre,
                 'tramas_hex'      => $d->tramas_hex ?? '',
-                'codigos_falla'   => is_string($d->codigos_falla ?? null) ? (json_decode($d->codigos_falla, true) ?: new \stdClass()) : ($d->codigos_falla ?? new \stdClass()),
+                'codigos_falla'   => is_string($d->codigos_falla ?? null) ? (json_decode($d->codigos_falla, true) ?: []) : ($d->codigos_falla ?? []),
                 'observaciones'   => $observacionesRaw !== '' ? $observacionesRaw : 'Sin observaciones',
                 // Enviamos la fecha original para que el frontend la formatee o la mostramos en formato legible
                 'fecha'           => !empty($d->created_at) ? $d->created_at : 'N/A',

@@ -173,7 +173,7 @@
         <BaseButton
           variant="danger"
           size="md"
-          @click="deleteClient(selectedClient.id)"
+          @click="handleDeleteClient(selectedClient.id)"
         >
           Eliminar
         </BaseButton>
@@ -284,24 +284,31 @@ const clientColumns = [
 // Columns for historial table with formatters
 const historialColumns = [
   { key: 'numero_ot', label: 'OT', width: 'quarter' },
+  { key: 'vehiculo', label: 'Vehículo', width: 'half' },
   {
-    key: 'vehiculo',
-    label: 'Vehículo',
-    width: 'half',
-    format: (value, row) => {
-      if (row.vehiculo && typeof row.vehiculo === 'object') {
-        return `${row.vehiculo.marca} ${row.vehiculo.modelo} - ${row.vehiculo.placa}`
+    key: 'estado',
+    label: 'Estado',
+    width: 'quarter',
+    format: (value) => {
+      const estados = {
+        diagnostico: { text: 'Diagnóstico', color: 'bg-blue-100 text-blue-800' },
+        reparacion: { text: 'Reparación', color: 'bg-yellow-100 text-yellow-800' },
+        esperando_repuesto: { text: 'Esperando Repuesto', color: 'bg-orange-100 text-orange-800' },
+        control_calidad: { text: 'Control Calidad', color: 'bg-purple-100 text-purple-800' },
+        entregado: { text: 'Entregado', color: 'bg-green-100 text-green-800' }
       }
-      return row.vehiculo || 'Vehículo no especificado'
+      const e = estados[value] || { text: value || 'Sin estado', color: 'bg-gray-100 text-gray-800' }
+      return `<span class="px-2 py-1 rounded-full text-xs font-semibold ${e.color}">${e.text}</span>`
     }
   },
-  { key: 'estado', label: 'Estado', width: 'quarter' },
   {
     key: 'fecha_cierre',
     label: 'Fecha Cierre',
     width: 'quarter',
-    format: (value, row) => {
-      return row.fecha_cierre ? new Date(row.fecha_cierre).toLocaleDateString() : 'Pendiente'
+    format: (value) => {
+      if (!value) return '<span class="text-gray-400">Pendiente</span>'
+      const d = new Date(value.replace(' ', 'T'))
+      return isNaN(d.getTime()) ? 'Fecha inválida' : d.toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' })
     }
   }
 ]
@@ -411,28 +418,46 @@ const loadHistorial = async (client) => {
   showClientDetailModal.value = false
   showHistorialModal.value = true
   historialCliente.value = client
+  historial.value = []
   try {
-    await fetchHistorial(client.id)
+    const response = await fetchHistorial(client.id)
     
-    if (historialData.value && historialData.value.data) {
-      const ordenesRaw = historialData.value.data
-      const ordenesTransformed = ordenesRaw.map(orden => {
+    if (response && response.success && Array.isArray(response.data)) {
+      const ordenesTransformed = response.data.map(orden => {
+        // Construir string de vehículo desde el objeto anidado
+        let vehiculoStr = 'Vehículo no especificado'
+        if (orden.vehiculo && typeof orden.vehiculo === 'object') {
+          const { marca, modelo, placa } = orden.vehiculo
+          if (marca || modelo || placa) {
+            vehiculoStr = `${marca || ''} ${modelo || ''} - ${placa || ''}`.trim()
+          }
+        } else if (typeof orden.vehiculo === 'string' && orden.vehiculo) {
+          vehiculoStr = orden.vehiculo
+        }
+
         return {
-          ...orden,
-          vehiculo: orden.vehiculo
-            ? `${orden.vehiculo.marca} ${orden.vehiculo.modelo} - ${orden.vehiculo.placa}`
-            : 'Vehículo no especificado',
+          id: orden.id,
+          numero_ot: orden.numero_ot || 'N/A',
+          vehiculo: vehiculoStr,
+          estado: orden.estado || 'Sin estado',
+          fecha_cierre: orden.fecha_cierre || null,
+          descripcion_problema: orden.descripcion_problema || '',
+          created_at: orden.created_at
         }
       })
       
       historial.value = ordenesTransformed
       historialCliente.value = {
-        ...historialCliente.value,
+        ...client,
         ordenes: ordenesTransformed
       }
+    } else {
+      historial.value = []
+      historialCliente.value = { ...client, ordenes: [] }
     }
   } catch (err) {
     alert.value = err.message || 'Error al obtener historial'
+    historial.value = []
   }
 }
 

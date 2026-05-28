@@ -27,6 +27,14 @@ export const reporteService = {
     const response = await fetch(`${apiBase}/reportes/excel/inventario`, {
       headers: { Authorization: `Bearer ${apiService.getToken()}` }
     })
+    if (!response.ok) {
+      let msg = 'Error al exportar inventario'
+      try {
+        const err = await response.json()
+        msg = err.mensaje || msg
+      } catch (_) { /* response was not JSON */ }
+      throw new Error(msg)
+    }
     return response.blob()
   }
 }

@@ -37,7 +37,7 @@ services:
     container_name: gem-postgres
     restart: unless-stopped
     ports:
-      - "5432:5432"
+      - "5433:5433"
     environment:
       - POSTGRES_DB=gem_motors
       - POSTGRES_USER=gem_user

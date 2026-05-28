@@ -93,6 +93,7 @@
 <script setup>
 import { ref, reactive, watch } from 'vue'
 import { repuestoService } from '@/services/repuestoService'
+import { reporteService } from '@/services/reporteService'
 import { useNotificacionesStore } from '@/stores/notificaciones'
 import { useDataFetch } from '@/composables/useDataFetch'
 import BaseModal from '@/components/shared/BaseModal.vue' // Importar BaseModal
@@ -154,10 +155,6 @@ watch(search, () => {
   fetchRepuestosList()
 })
 
-// ===== Data fetching for export =====
-const { loading: exportLoading, error: exportError, execute: fetchExport } = 
-  useDataFetch(() => repuestoService.getAll({ export: 'excel' }))
-
 // ===== Mutations (using composable) =====
 const { loading: createLoading, error: createError, execute: createRepuesto } = 
   useDataFetch(repuestoService.create)
@@ -185,8 +182,16 @@ async function fetchRepuestos() {
 
 async function exportToExcel() {
   try {
-    await fetchExport()
-    // Assuming the service handles the download (e.g., by returning a blob that triggers download)
+    const blob = await reporteService.exportarExcelInventario()
+    // Crear un enlace temporal para forzar la descarga del archivo
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', 'inventario_gem_motors.csv')
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
     notificacionesStore.addNotification({ type: 'success', message: 'Exportado exitosamente', timeout: 3000 })
   } catch (err) {
     alert.value = err.message || 'Error al exportar'

@@ -86,11 +86,41 @@ class ClienteController
             return;
         }
 
-        $historial = $cliente->getHistorial();
+        $db = \GemMotors\Config\Database::getInstance();
+        $stmt = $db->prepare('
+            SELECT 
+                o.id,
+                o.numero_ot,
+                o.descripcion_problema,
+                o.estado,
+                o.fecha_cierre,
+                o.created_at,
+                v.marca AS vehiculo_marca,
+                v.modelo AS vehiculo_modelo,
+                v.placa AS vehiculo_placa
+            FROM ordenes_trabajo o
+            LEFT JOIN vehiculos v ON o.vehiculo_id = v.id
+            WHERE o.cliente_id = :id
+            ORDER BY o.created_at DESC
+        ');
+        $stmt->execute(['id' => $id]);
+        $rows = $stmt->fetchAll();
+
         $data = array_map(function($row) {
-            $row['vehiculo'] = ['marca' => $row['marca'], 'modelo' => $row['modelo'], 'placa' => $row['placa']];
-            return $row;
-        }, $historial);
+            return [
+                'id'                   => (int)$row['id'],
+                'numero_ot'            => $row['numero_ot'] ?? 'N/A',
+                'descripcion_problema' => $row['descripcion_problema'] ?? '',
+                'estado'               => $row['estado'] ?? 'Sin estado',
+                'fecha_cierre'         => $row['fecha_cierre'],
+                'created_at'           => $row['created_at'],
+                'vehiculo'             => [
+                    'marca'  => $row['vehiculo_marca'] ?? '',
+                    'modelo' => $row['vehiculo_modelo'] ?? '',
+                    'placa'  => $row['vehiculo_placa'] ?? ''
+                ]
+            ];
+        }, $rows);
 
         App::jsonResponse(true, $data, 'Historial obtenido');
     }

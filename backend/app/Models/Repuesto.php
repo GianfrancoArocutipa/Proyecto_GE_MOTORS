@@ -110,7 +110,7 @@ class Repuesto
             throw new \InvalidArgumentException('Formato de código OEM inválido. Debe ser alfanumérico con guiones.');
         }
 
-        $stockMinimo = (isset($data['stock_minimo']) && $data['stock_minimo'] !== '') ? (int)$data['stock_minimo'] : 1;
+        $stockMinimo = (isset($data['stock_minimo']) && $data['stock_minimo'] !== null && $data['stock_minimo'] !== '') ? (int)$data['stock_minimo'] : 1;
 
         $db = Database::getInstance();
         $stmt = $db->prepare('INSERT INTO repuestos (codigo_oem, nombre, descripcion, categoria, marca_fabricante, stock, stock_minimo, precio_unitario) VALUES (:codigo_oem, :nombre, :descripcion, :categoria, :marca_fabricante, :stock, :stock_minimo, :precio_unitario)');
@@ -149,9 +149,9 @@ class Repuesto
             throw new \InvalidArgumentException('Formato de código OEM inválido. Debe ser alfanumérico con guiones.');
         }
 
-        $stockMinimo = isset($data['stock_minimo']) 
-            ? ($data['stock_minimo'] !== '' ? (int)$data['stock_minimo'] : 1) 
-            : $this->stock_minimo;
+        $stockMinimo = (isset($data['stock_minimo']) && $data['stock_minimo'] !== null && $data['stock_minimo'] !== '') 
+            ? (int)$data['stock_minimo'] 
+            : (array_key_exists('stock_minimo', $data) ? 1 : $this->stock_minimo);
 
         $db = Database::getInstance();
         $stmt = $db->prepare('UPDATE repuestos SET codigo_oem = :codigo_oem, nombre = :nombre, descripcion = :descripcion, categoria = :categoria, marca_fabricante = :marca_fabricante, stock = :stock, stock_minimo = :stock_minimo, precio_unitario = :precio_unitario WHERE id = :id');

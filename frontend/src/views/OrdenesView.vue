@@ -152,19 +152,68 @@
               <p class="text-sm font-medium text-gray-500">Fecha de ingreso</p>
               <p class="text-sm text-gray-900">{{ formatDate(otSeleccionada.fecha_ingreso) }}</p>
             </div>
-            <div>
-              <p class="text-sm font-medium text-gray-500">Mecánico asignado</p>
-              <p class="text-sm text-gray-900">{{ otSeleccionada.mecanico?.nombre || 'Sin asignar' }}</p>
+            <!-- El botón de Asignar ahora se movió al título de Mecánicos Asignados -->
+          </div>
+
+          <!-- Mecánicos Asignados List -->
+          <div class="pt-4 border-t border-gray-200">
+            <div class="flex items-center justify-between mb-3">
+              <h4 class="text-sm font-medium text-gray-700">Mecánicos Asignados</h4>
               <BaseButton 
-                v-if="userRole === 'administrador' && otSeleccionada.estado !== 'entregado'"
-                variant="link" 
-                size="sm" 
-                class="mt-1 p-0 h-auto"
-                @click="abrirAsignarMecanico"
+                v-if="userRole === 'administrador' && otSeleccionada.estado !== 'entregado'" 
+                variant="link" size="sm" class="p-0" @click="abrirAsignarMecanico"
               >
-                {{ otSeleccionada.mecanico ? 'Cambiar' : 'Asignar ahora' }}
+                + Añadir Mecánico
               </BaseButton>
             </div>
+            <ul v-if="otSeleccionada.mecanicos_asignados && otSeleccionada.mecanicos_asignados.length > 0" class="space-y-2">
+              <li v-for="m in otSeleccionada.mecanicos_asignados" :key="m.asignacion_id" class="flex justify-between items-center bg-gray-50 p-2 rounded border border-gray-100">
+                <div>
+                  <span class="text-sm font-medium text-gray-800">{{ m.nombre }} {{ m.apellido }}</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                  <span class="text-xs text-gray-500">Horas:</span>
+                  <input v-if="(userRole === 'administrador' || authStore.user?.id === m.mecanico_id) && otSeleccionada.estado !== 'entregado'" 
+                         type="number" step="0.5" min="0" class="w-16 px-1 py-1 text-sm border rounded" 
+                         v-model.number="m.horas_trabajadas" />
+                  <span v-else class="text-sm font-medium text-gray-900 w-12 text-right">{{ m.horas_trabajadas }}</span>
+                  <BaseButton v-if="(userRole === 'administrador' || authStore.user?.id === m.mecanico_id) && otSeleccionada.estado !== 'entregado'" 
+                              variant="primary" size="sm" class="px-2 py-1 h-auto text-xs" 
+                              @click="guardarHorasMecanico(m)" :loading="m.saving">Guardar</BaseButton>
+                </div>
+              </li>
+            </ul>
+            <p v-else class="text-sm text-gray-500 italic">No hay mecánicos asignados a esta orden.</p>
+          </div>
+
+          <!-- Repuestos Asignados List -->
+          <div class="pt-4 border-t border-gray-200">
+            <div class="flex items-center justify-between mb-3">
+              <h4 class="text-sm font-medium text-gray-700">Repuestos Utilizados</h4>
+              <BaseButton 
+                v-if="(userRole === 'administrador' || userRole === 'mecanico') && otSeleccionada.estado !== 'entregado'" 
+                variant="link" size="sm" class="p-0" @click="abrirAsignarRepuesto"
+              >
+                + Añadir Repuesto
+              </BaseButton>
+            </div>
+            <ul v-if="otSeleccionada.repuestos_asignados && otSeleccionada.repuestos_asignados.length > 0" class="space-y-2">
+              <li v-for="r in otSeleccionada.repuestos_asignados" :key="r.id" class="flex justify-between items-center bg-gray-50 p-2 rounded border border-gray-100">
+                <div class="flex items-center space-x-2">
+                  <span class="text-sm font-medium text-gray-800">{{ r.repuesto_nombre }}</span>
+                  <span class="text-xs text-gray-500">({{ r.codigo_oem }})</span>
+                </div>
+                <div class="flex items-center space-x-3">
+                  <span class="text-sm text-gray-600">Cant: {{ r.cantidad }}</span>
+                  <BaseButton v-if="(userRole === 'administrador' || userRole === 'mecanico') && otSeleccionada.estado !== 'entregado'" 
+                              variant="danger" size="sm" class="px-2 py-1 h-auto text-xs bg-red-100 text-red-700 border-red-200 hover:bg-red-200" 
+                              @click="eliminarRepuesto(r.repuesto_id)">
+                    ✕
+                  </BaseButton>
+                </div>
+              </li>
+            </ul>
+            <p v-else class="text-sm text-gray-500 italic">No hay repuestos asignados a esta orden.</p>
           </div>
 
           <!-- Budget status -->
@@ -203,7 +252,9 @@
           <label class="block text-sm font-medium text-gray-700">Seleccionar Mecánico</label>
           <select v-model="mecanicoForm.mecanico_id" class="w-full px-3 py-2 border rounded-md">
             <option value="">Seleccione...</option>
-            <option v-for="m in listaMecanicos" :key="m.id" :value="m.id">{{ m.nombre }} {{ m.apellido }}</option>
+            <option v-for="m in listaMecanicos" :key="m.id" :value="m.id">
+              {{ m.nombre }} {{ m.apellido }} ({{ m.ots_activas }} OTs activas)
+            </option>
           </select>
         </div>
         <div>
@@ -220,6 +271,39 @@
           @click="handleAssignMecanico"
         >
           Confirmar Asignación
+        </BaseButton>
+      </template>
+    </BaseModal>
+
+    <!-- Assign Repuesto Modal -->
+    <BaseModal v-model:show="showAssignRepuestoModal" @close="showAssignRepuestoModal = false">
+      <template #header>
+        <h3 class="text-lg font-medium text-gray-900">Añadir Repuesto a OT #{{ otSeleccionada?.numero_ot }}</h3>
+      </template>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Seleccionar Repuesto</label>
+          <select v-model="repuestoForm.repuesto_id" class="w-full px-3 py-2 border rounded-md">
+            <option value="">Seleccione un repuesto del inventario...</option>
+            <option v-for="r in listaRepuestos" :key="r.id" :value="r.id" :disabled="r.stock <= 0">
+              {{ r.nombre }} - {{ r.codigo_oem }} (Stock: {{ r.stock }})
+            </option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Cantidad a utilizar</label>
+          <input v-model.number="repuestoForm.cantidad" type="number" min="1" class="w-full px-3 py-2 border rounded-md" />
+        </div>
+      </div>
+      <template #footer>
+        <BaseButton variant="outline" @click="showAssignRepuestoModal = false">Cancelar</BaseButton>
+        <BaseButton 
+          variant="primary" 
+          :loading="assignRepuestoLoadingState" 
+          :disabled="!repuestoForm.repuesto_id || repuestoForm.cantidad < 1"
+          @click="handleAssignRepuesto"
+        >
+          Confirmar Repuesto
         </BaseButton>
       </template>
     </BaseModal>
@@ -241,6 +325,7 @@ import BaseAlert from '@/components/shared/BaseAlert.vue'
 import OrdenEstadoPipeline from '@/components/ordenes/OrdenEstadoPipeline.vue'
 import TransicionEstadoModal from '@/components/ordenes/TransicionEstadoModal.vue'
 import { usuarioService } from '@/services/usuarioService'
+import { repuestoService } from '@/services/repuestoService'
 
 const authStore = useAuthStore()
 const notificacionesStore = useNotificacionesStore()
@@ -255,6 +340,7 @@ const showCreateModal = ref(false)
 const showDetailModal = ref(false)
 const showTransicionModal = ref(false)
 const showAssignMecanicoModal = ref(false)
+const showAssignRepuestoModal = ref(false)
 
 const otSeleccionada = ref(null)
 const estadoObjetivo = ref(null)
@@ -263,6 +349,9 @@ const assignLoading = ref(false)
 
 const listaMecanicos = ref([])
 const mecanicoForm = reactive({ mecanico_id: '', horas_trabajadas: 0 })
+
+const listaRepuestos = ref([])
+const repuestoForm = reactive({ repuesto_id: '', cantidad: 1 })
 
 // Form state
 const orderForm = reactive({
@@ -325,6 +414,9 @@ const { loading: createLoading, execute: createOrder } = useDataFetch(ordenServi
 // ===== Mutation for assigning mechanic =====
 const { loading: assignLoadingState, error: assignError, execute: assignMecanicoAction } = useDataFetch(ordenService.asignarMecanico)
 
+// ===== Mutation for assigning repuesto =====
+const { loading: assignRepuestoLoadingState, error: assignRepuestoError, execute: assignRepuestoAction } = useDataFetch(ordenService.agregarRepuesto)
+
 // ===== Mutation for changing state =====
 const { loading: transicionLoadingState, error: transicionError, execute: cambiarEstado } = 
   useDataFetch(ordenService.cambiarEstado)
@@ -380,6 +472,16 @@ watch(assignError, (err) => {
   }
 })
 
+watch(assignRepuestoError, (err) => {
+  if (err) {
+    notificacionesStore.addNotification({
+      type: 'error',
+      message: err.message || 'Error al asignar repuesto',
+      timeout: 5000
+    })
+  }
+})
+
 watch(transicionError, (err) => {
   if (err) {
     notificacionesStore.addNotification({
@@ -400,15 +502,12 @@ async function fetchOrdenes() {
 
 async function abrirAsignarMecanico() {
   try {
-    const response = await usuarioService.getAll()
+    const response = await usuarioService.getCargaMecanicos()
     if (response && response.success) {
-      // Extraemos el array de la propiedad data del JSON de respuesta
-      const usuarios = Array.isArray(response.data) ? response.data : []
-      listaMecanicos.value = usuarios.filter(u => u.rol?.toLowerCase() === 'mecanico' && u.activo)
+      listaMecanicos.value = response.data || []
       showAssignMecanicoModal.value = true
     }
   } catch (err) {
-    // El apiService ya suele mostrar notificaciones para errores 4xx/5xx
     console.error('Fallo al recuperar lista de mecánicos:', err)
   }
 }
@@ -419,19 +518,72 @@ async function handleAssignMecanico() {
     notificacionesStore.addNotification({ type: 'success', message: 'Mecánico asignado correctamente' })
     showAssignMecanicoModal.value = false
     
-    // Limpiar formulario y refrescar datos
     mecanicoForm.mecanico_id = ''
     mecanicoForm.horas_trabajadas = 0
     await fetchOrdenes()
     
-    // Forzar actualización del modal de detalle
+    // Refrescar modal con info actualizada
     if (otSeleccionada.value) {
-      setTimeout(() => {
-        const updated = ordenes.value.find(o => o.id === otSeleccionada.value.id)
-        if (updated) otSeleccionada.value = updated
-      }, 150)
+      verDetalle({ id: otSeleccionada.value.id })
     }
   } catch (err) {
+  }
+}
+
+async function abrirAsignarRepuesto() {
+  try {
+    const response = await repuestoService.getAll()
+    if (response && response.success) {
+      listaRepuestos.value = response.data || []
+      repuestoForm.cantidad = 1
+      repuestoForm.repuesto_id = ''
+      showAssignRepuestoModal.value = true
+    }
+  } catch (err) {
+    notificacionesStore.addNotification({ type: 'error', message: 'No se pudo cargar el inventario' })
+  }
+}
+
+async function handleAssignRepuesto() {
+  try {
+    await assignRepuestoAction(otSeleccionada.value.id, repuestoForm)
+    notificacionesStore.addNotification({ type: 'success', message: 'Repuesto asignado correctamente' })
+    showAssignRepuestoModal.value = false
+    
+    // Refrescar modal con info actualizada
+    if (otSeleccionada.value) {
+      verDetalle({ id: otSeleccionada.value.id })
+    }
+  } catch (err) {
+  }
+}
+
+async function eliminarRepuesto(repuestoId) {
+  if (!confirm('¿Seguro que desea remover este repuesto de la orden?')) return
+  try {
+    await ordenService.eliminarRepuesto(otSeleccionada.value.id, repuestoId)
+    notificacionesStore.addNotification({ type: 'success', message: 'Repuesto removido correctamente' })
+    
+    // Refrescar modal con info actualizada
+    if (otSeleccionada.value) {
+      verDetalle({ id: otSeleccionada.value.id })
+    }
+  } catch (err) {
+    notificacionesStore.addNotification({ type: 'error', message: err.message || 'Error al remover repuesto' })
+  }
+}
+
+async function guardarHorasMecanico(mecanico) {
+  mecanico.saving = true
+  try {
+    await ordenService.actualizarHorasMecanico(otSeleccionada.value.id, mecanico.mecanico_id, {
+      horas_trabajadas: mecanico.horas_trabajadas
+    })
+    notificacionesStore.addNotification({ type: 'success', message: 'Horas actualizadas' })
+  } catch (err) {
+    notificacionesStore.addNotification({ type: 'error', message: err.message || 'Error al actualizar horas' })
+  } finally {
+    mecanico.saving = false
   }
 }
 
@@ -465,9 +617,16 @@ function resetCreateForm() {
   clientVehicles.value = []
 }
 
-function verDetalle(orden) {
-  otSeleccionada.value = orden
-  showDetailModal.value = true
+async function verDetalle(orden) {
+  try {
+    const res = await ordenService.getById(orden.id)
+    if (res && res.success) {
+      otSeleccionada.value = res.data
+      showDetailModal.value = true
+    }
+  } catch (e) {
+    notificacionesStore.addNotification({ type: 'error', message: 'Error al cargar detalles de la orden' })
+  }
 }
 
 function abrirTransicion({ otId, nuevoEstado }) {
@@ -501,17 +660,7 @@ async function ejecutarTransicion({ otId, nuevoEstado, observaciones }) {
     await fetchOrdenesList()
     // If the selected order is the one we just updated, refresh the detail modal
     if (otSeleccionada.value?.id === otId) {
-      // We could fetch the specific order, but for simplicity we'll just refresh the list and then
-      // the detail modal will show the updated data from the list (since we map over the list)
-      // However, the detail modal uses otSeleccionada which is a ref to an order from the list.
-      // We'll need to update otSeleccionada with the updated order from the list.
-      // We'll do a timeout to let the list update and then find the order.
-      setTimeout(() => {
-        const updatedOrder = ordenes.value.find(o => o.id === otId)
-        if (updatedOrder) {
-          otSeleccionada.value = updatedOrder
-        }
-      }, 100)
+      verDetalle({ id: otId })
     }
   } catch (err) {
     // Error handled by watcher

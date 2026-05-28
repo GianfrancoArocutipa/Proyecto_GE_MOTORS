@@ -86,8 +86,8 @@ class RepuestoController
         $descripcion = $input['descripcion'] ?? null;
         $categoria = $input['categoria'] ?? null;
         $marcaFabricante = $input['marca_fabricante'] ?? null;
-        $stock = $input['stock'] ?? 0;
-        $stockMinimo = $input['stock_minimo'] ?? 0;
+        $stock = isset($input['stock']) && $input['stock'] !== '' ? (int)$input['stock'] : 0;
+        $stockMinimo = isset($input['stock_minimo']) && $input['stock_minimo'] !== '' ? (int)$input['stock_minimo'] : null;
         $precioUnitario = $input['precio_unitario'] ?? 0.0;
 
         // Validar campos requeridos
@@ -201,8 +201,8 @@ class RepuestoController
         $descripcion = $input['descripcion'] ?? $repuesto->descripcion;
         $categoria = $input['categoria'] ?? $repuesto->categoria;
         $marcaFabricante = $input['marca_fabricante'] ?? $repuesto->marca_fabricante;
-        $stock = $input['stock'] ?? $repuesto->stock;
-        $stockMinimo = $input['stock_minimo'] ?? $repuesto->stock_minimo;
+        $stock = isset($input['stock']) && $input['stock'] !== '' ? (int)$input['stock'] : $repuesto->stock;
+        $stockMinimo = isset($input['stock_minimo']) && $input['stock_minimo'] !== '' ? (int)$input['stock_minimo'] : (array_key_exists('stock_minimo', $input) ? null : $repuesto->stock_minimo);
         $precioUnitario = $input['precio_unitario'] ?? $repuesto->precio_unitario;
 
         // Validar campos requeridos

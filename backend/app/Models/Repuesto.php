@@ -110,6 +110,8 @@ class Repuesto
             throw new \InvalidArgumentException('Formato de código OEM inválido. Debe ser alfanumérico con guiones.');
         }
 
+        $stockMinimo = (isset($data['stock_minimo']) && $data['stock_minimo'] !== null && $data['stock_minimo'] !== '') ? (int)$data['stock_minimo'] : 1;
+
         $db = Database::getInstance();
         $stmt = $db->prepare('INSERT INTO repuestos (codigo_oem, nombre, descripcion, categoria, marca_fabricante, stock, stock_minimo, precio_unitario) VALUES (:codigo_oem, :nombre, :descripcion, :categoria, :marca_fabricante, :stock, :stock_minimo, :precio_unitario)');
         $stmt->execute([
@@ -119,7 +121,7 @@ class Repuesto
             'categoria' => $data['categoria'] ?? null,
             'marca_fabricante' => $data['marca_fabricante'] ?? null,
             'stock' => $data['stock'],
-            'stock_minimo' => $data['stock_minimo'] ?? 0,
+            'stock_minimo' => $stockMinimo,
             'precio_unitario' => $data['precio_unitario']
         ]);
 
@@ -133,7 +135,7 @@ class Repuesto
             $data['categoria'] ?? null,
             $data['marca_fabricante'] ?? null,
             $data['stock'],
-            $data['stock_minimo'] ?? 0,
+            $stockMinimo,
             (float)$data['precio_unitario'],
             date('Y-m-d H:i:s')
         );
@@ -147,6 +149,10 @@ class Repuesto
             throw new \InvalidArgumentException('Formato de código OEM inválido. Debe ser alfanumérico con guiones.');
         }
 
+        $stockMinimo = (isset($data['stock_minimo']) && $data['stock_minimo'] !== null && $data['stock_minimo'] !== '') 
+            ? (int)$data['stock_minimo'] 
+            : (array_key_exists('stock_minimo', $data) ? 1 : $this->stock_minimo);
+
         $db = Database::getInstance();
         $stmt = $db->prepare('UPDATE repuestos SET codigo_oem = :codigo_oem, nombre = :nombre, descripcion = :descripcion, categoria = :categoria, marca_fabricante = :marca_fabricante, stock = :stock, stock_minimo = :stock_minimo, precio_unitario = :precio_unitario WHERE id = :id');
         $stmt->execute([
@@ -157,7 +163,7 @@ class Repuesto
             'categoria' => $data['categoria'] ?? $this->categoria,
             'marca_fabricante' => $data['marca_fabricante'] ?? $this->marca_fabricante,
             'stock' => $data['stock'] ?? $this->stock,
-            'stock_minimo' => $data['stock_minimo'] ?? $this->stock_minimo,
+            'stock_minimo' => $stockMinimo,
             'precio_unitario' => $data['precio_unitario'] ?? $this->precio_unitario
         ]);
 
@@ -168,7 +174,7 @@ class Repuesto
         $this->categoria = $data['categoria'] ?? $this->categoria;
         $this->marca_fabricante = $data['marca_fabricante'] ?? $this->marca_fabricante;
         $this->stock = $data['stock'] ?? $this->stock;
-        $this->stock_minimo = $data['stock_minimo'] ?? $this->stock_minimo;
+        $this->stock_minimo = $stockMinimo;
         $this->precio_unitario = $data['precio_unitario'] ?? $this->precio_unitario;
     }
 
@@ -249,11 +255,14 @@ class Repuesto
                 'stock' => $nuevoStock
             ]);
 
-            // Verificar si el stock cayó por debajo del mínimo para notificar (RN-08)
+            // Verificar si el stock cayó por debajo o es igual al mínimo para notificar (RN-08)
             if ($nuevoStock <= $repuesto->stock_minimo) {
-                // En un sistema real, aquí se llamaría al servicio de notificación
-                // Por ahora solo lanzamos una excepción para que el controller la maneje
-                throw new \RuntimeException("Stock crítico: {$repuesto->nombre} tiene {$nuevoStock} unidades (mínimo: {$repuesto->stock_minimo})");
+                // Generar notificación al administrador y registrarla en log o enviar email
+                \GemMotors\Services\NotificacionService::notificarStockBajo(
+                    $repuesto->nombre, 
+                    $nuevoStock, 
+                    $repuesto->stock_minimo
+                );
             }
 
             $db->commit();

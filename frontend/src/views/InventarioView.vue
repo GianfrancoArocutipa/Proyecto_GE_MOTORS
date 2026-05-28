@@ -3,7 +3,7 @@
     <div class="flex justify-between items-center mb-4">
       <h2 class="text-2xl font-bold text-gray-900">Gestión de Inventario</h2>
       <div class="flex space-x-3">
-        <BaseButton variant="primary" size="md" @click="showCreateRepuestoModal = true" :loading="savingRepuesto">
+        <BaseButton variant="primary" size="md" @click="openCreateModal" :loading="savingRepuesto">
           Nuevo Repuesto
         </BaseButton>
         <BaseButton variant="secondary" size="md" @click="exportToExcel">
@@ -122,7 +122,7 @@ const repuestoForm = reactive({
   categoria: '',
   marca_fabricante: '',
   stock: 0,
-  stock_minimo: 0,
+  stock_minimo: null,
   precio_unitario: 0
 })
 
@@ -235,10 +235,15 @@ function openDetailModal(repuesto) {
 }
 
 function resetRepuestoForm() {
-  Object.assign(repuestoForm, { codigo_oem: '', nombre: '', descripcion: '', categoria: '', marca_fabricante: '', stock: 0, stock_minimo: 0, precio_unitario: 0 })
+  Object.assign(repuestoForm, { codigo_oem: '', nombre: '', descripcion: '', categoria: '', marca_fabricante: '', stock: 0, stock_minimo: null, precio_unitario: 0 })
   editingRepuesto.value = null
   showCreateRepuestoModal.value = false
   oemError.value = ''
+}
+
+function openCreateModal() {
+  resetRepuestoForm()
+  showCreateRepuestoModal.value = true
 }
 
 function resetRepuestoDetail() {

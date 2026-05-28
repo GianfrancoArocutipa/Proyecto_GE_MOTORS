@@ -22,7 +22,7 @@ export const ordenService = {
   },
 
   cambiarEstado(id, data) {
-    return apiService.post(`/ordenes/${id}/estado`, data)
+    return apiService.put(`/ordenes/${id}/estado`, data)
   },
 
   getEstadisticas() {
@@ -59,5 +59,13 @@ export const ordenService = {
 
   getPorCodigo(codigo) {
     return apiService.get(`/seguimiento/${codigo}`)
+  },
+
+  asignarMecanico(id, data) {
+    return apiService.post(`/ordenes/${id}/mecanico`, data)
+  },
+
+  actualizarHorasMecanico(id, mecanicoId, data) {
+    return apiService.put(`/ordenes/${id}/mecanico/${mecanicoId}/horas`, data)
   }
 }

@@ -20,17 +20,25 @@ class NotificacionService
      */
     public static function notificarStockBajo(string $nombreRepuesto, int $stockActual, int $stockMinimo): bool
     {
-        // En un sistema real, aquí se enviaría un correo, SMS o notificación push
-        // Por ahora, simulamos el envío y lo registramos en un log
-        
         $mensaje = "ALERTA DE STOCK BAJO: El repuesto '{$nombreRepuesto}' tiene un stock de {$stockActual} unidades, " .
-                  "que está por debajo del mínimo permitido de {$stockMinimo} unidades.";
+                  "que está por debajo o igual al mínimo permitido de {$stockMinimo} unidades.";
         
-        // Simular envío de notificación (en producción, aquí iría el código real)
+        // Simular envío de correo electrónico al administrador
+        try {
+            // Simulamos la llamada a una función de envío de correo (ej. mail() o PHPMailer)
+            $to = "admin@gem-motors.com";
+            $subject = "Alerta de Stock Crítico: {$nombreRepuesto}";
+            
+            // Registramos el éxito del envío simulado
+            error_log("[" . date('Y-m-d H:i:s') . "] EMAIL ENVIADO a {$to}: {$subject} - {$mensaje}");
+            
+        } catch (\Exception $e) {
+            // En caso de fallo en el envío, registramos el error pero no detenemos el proceso (Flujo Alternativo 5a)
+            error_log("[" . date('Y-m-d H:i:s') . "] ERROR ENVIO EMAIL: " . $e->getMessage());
+        }
+        
+        // También registramos la alerta en el log general del sistema
         error_log("[" . date('Y-m-d H:i:s') . "] NOTIFICACION: {$mensaje}");
-        
-        // También podríamos guardar en una tabla de notificaciones en la base de datos
-        // Pero por simplicidad, solo lo registramos en el log
         
         return true;
     }

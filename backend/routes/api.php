@@ -163,6 +163,9 @@ elseif (preg_match('#ordenes(?:/(.*))?#', $uri, $matches) && $method === 'GET') 
 } elseif (preg_match('#ordenes/(\d+)/repuestos#', $uri, $matches) && $method === 'POST') {
     // POST /api/ordenes/{id}/repuestos
     callController('OrdenTrabajoController', 'asignarRepuestos', [(int)$matches[1]]);
+} elseif (preg_match('#ordenes/(\d+)/mecanico/(\d+)/horas#', $uri, $matches) && $method === 'PUT') {
+    // PUT /api/ordenes/{id}/mecanico/{mecanico_id}/horas
+    callController('OrdenTrabajoController', 'actualizarHorasMecanico', [(int)$matches[1], (int)$matches[2]]);
 } elseif (preg_match('#ordenes/(\d+)/mecanico#', $uri, $matches) && $method === 'POST') {
     // POST /api/ordenes/{id}/mecanico
     callController('OrdenTrabajoController', 'asignarMecanico', [(int)$matches[1]]);
@@ -258,8 +261,12 @@ elseif (preg_match('#reportes/ingresos#', $uri) && $method === 'GET') {
 }
 
 // Rutas de Usuarios
-elseif (preg_match('#usuarios#', $uri) && $method === 'GET') {
-    callController('UsuarioController', 'index');
+elseif (preg_match('#usuarios/carga-mecanicos#', $uri) && $method === 'GET') {
+    callController('UsuarioController', 'getCargaMecanicos');
+} elseif (preg_match('#usuarios(?:/(.*))?#', $uri, $matches) && $method === 'GET') {
+    if (empty($matches[1])) {
+        callController('UsuarioController', 'index');
+    }
 } elseif (preg_match('#usuarios#', $uri) && $method === 'POST') {
     // POST /api/usuarios
     callController('UsuarioController', 'create');

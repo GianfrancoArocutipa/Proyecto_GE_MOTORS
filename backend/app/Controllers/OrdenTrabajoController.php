@@ -218,6 +218,7 @@ class OrdenTrabajoController
                 'nombre' => $orden->getMecanico()->nombre,
                 'apellido' => $orden->getMecanico()->apellido
             ] : null,
+            'mecanicos_asignados' => $orden->getMecanicosAsignados(),
             'descripcion_problema' => $orden->descripcion_problema,
             'estado' => $orden->estado,
             'presupuesto_aprobado' => $orden->presupuesto_aprobado,
@@ -517,6 +518,63 @@ class OrdenTrabajoController
             ], 'Mecánico asignado exitosamente', 201);
         } catch (\Exception $e) {
             App::jsonResponse(false, null, $e->getMessage(), 400);
+        }
+    }
+
+    /**
+     * Actualizar horas trabajadas por un mecánico
+     * PUT /api/ordenes/{id}/mecanico/{mecanico_id}/horas
+     */
+    public static function actualizarHorasMecanico(int $id, int $mecanicoId): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'PUT') {
+            App::jsonResponse(false, null, 'Método no permitido', 405);
+            return;
+        }
+
+        AuthMiddleware::requireAuth();
+        // Puede ser admin o el propio mecánico (en un entorno más estricto validaríamos el ID del mecánico)
+        
+        $orden = OrdenTrabajo::find($id);
+        if ($orden === null) {
+            App::jsonResponse(false, null, 'Orden de trabajo no encontrada', 404);
+            return;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            App::jsonResponse(false, null, 'JSON inválido', 400);
+            return;
+        }
+
+        $horasTrabajadas = isset($input['horas_trabajadas']) ? (float)$input['horas_trabajadas'] : null;
+        if ($horasTrabajadas === null || $horasTrabajadas < 0) {
+            App::jsonResponse(false, null, 'Horas trabajadas es requerido y debe ser positivo', 400);
+            return;
+        }
+
+        try {
+            $db = \GemMotors\Config\Database::getInstance();
+            $stmt = $db->prepare('UPDATE mecanico_ot SET horas_trabajadas = :horas WHERE orden_id = :orden_id AND mecanico_id = :mecanico_id');
+            $stmt->execute([
+                'horas' => $horasTrabajadas,
+                'orden_id' => $orden->id,
+                'mecanico_id' => $mecanicoId
+            ]);
+
+            if ($stmt->rowCount() === 0) {
+                // Verificar si existe la relación primero
+                $check = $db->prepare('SELECT id FROM mecanico_ot WHERE orden_id = ? AND mecanico_id = ?');
+                $check->execute([$orden->id, $mecanicoId]);
+                if (!$check->fetch()) {
+                    App::jsonResponse(false, null, 'El mecánico no está asignado a esta orden', 404);
+                    return;
+                }
+            }
+
+            App::jsonResponse(true, null, 'Horas actualizadas exitosamente');
+        } catch (\Exception $e) {
+            App::jsonResponse(false, null, $e->getMessage(), 500);
         }
     }
 

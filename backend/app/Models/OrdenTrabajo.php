@@ -303,6 +303,20 @@ class OrdenTrabajo
         return $diagnosticos;
     }
 
+    // Obtener la lista de mecánicos asignados desde mecanico_ot
+    public function getMecanicosAsignados(): array
+    {
+        $db = Database::getInstance();
+        $stmt = $db->prepare('
+            SELECT mot.id as asignacion_id, mot.mecanico_id, u.nombre, u.apellido, mot.horas_trabajadas, mot.fecha_asignacion 
+            FROM mecanico_ot mot 
+            JOIN usuarios u ON mot.mecanico_id = u.id 
+            WHERE mot.orden_id = :orden_id
+        ');
+        $stmt->execute(['orden_id' => $this->id]);
+        return $stmt->fetchAll();
+    }
+
     // Obtener repuestos asignados
     public function getRepuestosAsignados(): array
     {

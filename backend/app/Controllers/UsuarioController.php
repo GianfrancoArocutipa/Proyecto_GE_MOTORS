@@ -125,4 +125,39 @@ class UsuarioController
             'activo' => $usuario->activo
         ], 'Usuario actualizado');
     }
+
+    /**
+     * Obtener la carga laboral actual de cada mecánico
+     * GET /api/usuarios/carga-mecanicos
+     */
+    public static function getCargaMecanicos(): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+            App::jsonResponse(false, null, 'Método no permitido', 405);
+            return;
+        }
+
+        AuthMiddleware::requireAuth();
+        RolMiddleware::checkRole();
+
+        $db = \GemMotors\Config\Database::getInstance();
+        
+        $query = "
+            SELECT u.id, u.nombre, u.apellido, COUNT(mot.orden_id) as ots_activas
+            FROM usuarios u
+            LEFT JOIN mecanico_ot mot ON u.id = mot.mecanico_id
+            LEFT JOIN ordenes_trabajo ot ON mot.orden_id = ot.id AND ot.estado NOT IN ('entregado')
+            WHERE u.rol = 'mecanico' AND u.activo = true
+            GROUP BY u.id, u.nombre, u.apellido
+            ORDER BY ots_activas ASC
+        ";
+
+        try {
+            $stmt = $db->query($query);
+            $carga = $stmt->fetchAll();
+            App::jsonResponse(true, $carga, 'Carga de mecánicos obtenida');
+        } catch (\Exception $e) {
+            App::jsonResponse(false, null, 'Error al obtener carga: ' . $e->getMessage(), 500);
+        }
+    }
 }

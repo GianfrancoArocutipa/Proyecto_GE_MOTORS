@@ -9,5 +9,7 @@ export const usuarioService = {
   
   delete: (id) => apiService.delete(`/usuarios/${id}`),
   
-  perfil: () => apiService.get('/auth/perfil')
+  perfil: () => apiService.get('/auth/perfil'),
+  
+  getCargaMecanicos: () => apiService.get('/usuarios/carga-mecanicos')
 }

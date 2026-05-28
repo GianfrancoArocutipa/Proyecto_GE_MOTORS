@@ -153,18 +153,47 @@
               <p class="text-sm text-gray-900">{{ formatDate(otSeleccionada.fecha_ingreso) }}</p>
             </div>
             <div>
-              <p class="text-sm font-medium text-gray-500">Mecánico asignado</p>
-              <p class="text-sm text-gray-900">{{ otSeleccionada.mecanico?.nombre || 'Sin asignar' }}</p>
+              <p class="text-sm text-gray-900">{{ otSeleccionada.mecanico?.nombre || 'Sin mecánicos asignados' }}</p>
               <BaseButton 
-                v-if="userRole === 'administrador' && otSeleccionada.estado !== 'entregado'"
+                v-if="userRole === 'administrador' && otSeleccionada.estado !== 'entregado' && (!otSeleccionada.mecanicos_asignados || otSeleccionada.mecanicos_asignados.length === 0)"
                 variant="link" 
                 size="sm" 
                 class="mt-1 p-0 h-auto"
                 @click="abrirAsignarMecanico"
               >
-                {{ otSeleccionada.mecanico ? 'Cambiar' : 'Asignar ahora' }}
+                Asignar ahora
               </BaseButton>
             </div>
+          </div>
+
+          <!-- Mecánicos Asignados List -->
+          <div v-if="otSeleccionada.mecanicos_asignados && otSeleccionada.mecanicos_asignados.length > 0" class="pt-4 border-t border-gray-200">
+            <div class="flex items-center justify-between mb-3">
+              <h4 class="text-sm font-medium text-gray-700">Mecánicos Asignados</h4>
+              <BaseButton 
+                v-if="userRole === 'administrador' && otSeleccionada.estado !== 'entregado'" 
+                variant="link" size="sm" class="p-0" @click="abrirAsignarMecanico"
+              >
+                + Añadir Mecánico
+              </BaseButton>
+            </div>
+            <ul class="space-y-2">
+              <li v-for="m in otSeleccionada.mecanicos_asignados" :key="m.asignacion_id" class="flex justify-between items-center bg-gray-50 p-2 rounded border border-gray-100">
+                <div>
+                  <span class="text-sm font-medium text-gray-800">{{ m.nombre }} {{ m.apellido }}</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                  <span class="text-xs text-gray-500">Horas:</span>
+                  <input v-if="userRole === 'administrador' || authStore.user?.id === m.mecanico_id" 
+                         type="number" step="0.5" min="0" class="w-16 px-1 py-1 text-sm border rounded" 
+                         v-model.number="m.horas_trabajadas" />
+                  <span v-else class="text-sm font-medium text-gray-900 w-12 text-right">{{ m.horas_trabajadas }}</span>
+                  <BaseButton v-if="userRole === 'administrador' || authStore.user?.id === m.mecanico_id" 
+                              variant="primary" size="sm" class="px-2 py-1 h-auto text-xs" 
+                              @click="guardarHorasMecanico(m)" :loading="m.saving">Guardar</BaseButton>
+                </div>
+              </li>
+            </ul>
           </div>
 
           <!-- Budget status -->
@@ -203,7 +232,9 @@
           <label class="block text-sm font-medium text-gray-700">Seleccionar Mecánico</label>
           <select v-model="mecanicoForm.mecanico_id" class="w-full px-3 py-2 border rounded-md">
             <option value="">Seleccione...</option>
-            <option v-for="m in listaMecanicos" :key="m.id" :value="m.id">{{ m.nombre }} {{ m.apellido }}</option>
+            <option v-for="m in listaMecanicos" :key="m.id" :value="m.id">
+              {{ m.nombre }} {{ m.apellido }} ({{ m.ots_activas }} OTs activas)
+            </option>
           </select>
         </div>
         <div>
@@ -400,15 +431,12 @@ async function fetchOrdenes() {
 
 async function abrirAsignarMecanico() {
   try {
-    const response = await usuarioService.getAll()
+    const response = await usuarioService.getCargaMecanicos()
     if (response && response.success) {
-      // Extraemos el array de la propiedad data del JSON de respuesta
-      const usuarios = Array.isArray(response.data) ? response.data : []
-      listaMecanicos.value = usuarios.filter(u => u.rol?.toLowerCase() === 'mecanico' && u.activo)
+      listaMecanicos.value = response.data || []
       showAssignMecanicoModal.value = true
     }
   } catch (err) {
-    // El apiService ya suele mostrar notificaciones para errores 4xx/5xx
     console.error('Fallo al recuperar lista de mecánicos:', err)
   }
 }
@@ -419,19 +447,29 @@ async function handleAssignMecanico() {
     notificacionesStore.addNotification({ type: 'success', message: 'Mecánico asignado correctamente' })
     showAssignMecanicoModal.value = false
     
-    // Limpiar formulario y refrescar datos
     mecanicoForm.mecanico_id = ''
     mecanicoForm.horas_trabajadas = 0
     await fetchOrdenes()
     
-    // Forzar actualización del modal de detalle
+    // Refrescar modal con info actualizada
     if (otSeleccionada.value) {
-      setTimeout(() => {
-        const updated = ordenes.value.find(o => o.id === otSeleccionada.value.id)
-        if (updated) otSeleccionada.value = updated
-      }, 150)
+      verDetalle({ id: otSeleccionada.value.id })
     }
   } catch (err) {
+  }
+}
+
+async function guardarHorasMecanico(mecanico) {
+  mecanico.saving = true
+  try {
+    await ordenService.actualizarHorasMecanico(otSeleccionada.value.id, mecanico.mecanico_id, {
+      horas_trabajadas: mecanico.horas_trabajadas
+    })
+    notificacionesStore.addNotification({ type: 'success', message: 'Horas actualizadas' })
+  } catch (err) {
+    notificacionesStore.addNotification({ type: 'error', message: err.message || 'Error al actualizar horas' })
+  } finally {
+    mecanico.saving = false
   }
 }
 
@@ -465,9 +503,16 @@ function resetCreateForm() {
   clientVehicles.value = []
 }
 
-function verDetalle(orden) {
-  otSeleccionada.value = orden
-  showDetailModal.value = true
+async function verDetalle(orden) {
+  try {
+    const res = await ordenService.getById(orden.id)
+    if (res && res.success) {
+      otSeleccionada.value = res.data
+      showDetailModal.value = true
+    }
+  } catch (e) {
+    notificacionesStore.addNotification({ type: 'error', message: 'Error al cargar detalles de la orden' })
+  }
 }
 
 function abrirTransicion({ otId, nuevoEstado }) {

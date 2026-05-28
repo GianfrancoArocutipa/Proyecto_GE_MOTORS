@@ -22,7 +22,7 @@ export const ordenService = {
   },
 
   cambiarEstado(id, data) {
-    return apiService.post(`/ordenes/${id}/estado`, data)
+    return apiService.put(`/ordenes/${id}/estado`, data)
   },
 
   getEstadisticas() {

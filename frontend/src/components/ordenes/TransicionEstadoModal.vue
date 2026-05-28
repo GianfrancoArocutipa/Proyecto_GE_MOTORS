@@ -1,5 +1,5 @@
 <template>
-  <BaseModal :show="show" @update:show="$emit('update:show', $event)" @close="handleClose">
+  <BaseModal :show="show" z-index="z-[60]" @update:show="$emit('update:show', $event)" @close="handleClose">
     <template #header>
       <h3 class="text-lg font-medium text-gray-900">
         Cambiar Estado: {{ estadoActualLabel }} → {{ nuevoEstadoLabel }}
@@ -106,12 +106,12 @@ const props = defineProps({
   estadoActual: {
     type: String,
     required: true,
-    validator: (v) => ['diagnostico', 'presupuesto', 'reparacion', 'control_calidad', 'entregado'].includes(v)
+    validator: (v) => ['diagnostico', 'esperando_repuesto', 'reparacion', 'control_calidad', 'entregado'].includes(v)
   },
   nuevoEstado: {
     type: String,
     required: true,
-    validator: (v) => ['diagnostico', 'presupuesto', 'reparacion', 'control_calidad', 'entregado'].includes(v)
+    validator: (v) => ['diagnostico', 'esperando_repuesto', 'reparacion', 'control_calidad', 'entregado'].includes(v)
   },
   presupuestoAprobado: {
     type: Boolean,
@@ -129,8 +129,8 @@ const observaciones = ref('')
 
 const ordenEstados = [
   { key: 'diagnostico', label: 'Diagnóstico' },
-  { key: 'presupuesto', label: 'Presupuesto' },
   { key: 'reparacion', label: 'Reparación' },
+  { key: 'esperando_repuesto', label: 'Esperando Repuesto' },
   { key: 'control_calidad', label: 'Control de Calidad' },
   { key: 'entregado', label: 'Entregado' }
 ]

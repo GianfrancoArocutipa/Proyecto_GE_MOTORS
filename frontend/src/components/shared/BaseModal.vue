@@ -1,7 +1,7 @@
 <template>
   <div 
     v-if="show" 
-    class="fixed inset-0 z-50 flex items-center justify-center bg-gray-600/50 backdrop-blur-sm p-4 animate-fade-in"
+    :class="['fixed inset-0 flex items-center justify-center bg-gray-600/50 backdrop-blur-sm p-4 animate-fade-in', zIndex]"
     @click.self="close"
   >
     <div class="relative w-full max-w-lg m-auto">
@@ -39,6 +39,10 @@ const props = defineProps({
   show: {
     type: Boolean,
     default: false
+  },
+  zIndex: {
+    type: String,
+    default: 'z-50'
   }
 })
 

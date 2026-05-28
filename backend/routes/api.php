@@ -149,17 +149,15 @@ elseif (preg_match('#ordenes(?:/(.*))?#', $uri, $matches) && $method === 'GET') 
         // GET /api/ordenes
         callController('OrdenTrabajoController', 'index');
     }
-} elseif (preg_match('#ordenes#', $uri) && $method === 'POST') {
+} elseif (preg_match('#ordenes$#', $uri) && $method === 'POST') {
     // POST /api/ordenes
     callController('OrdenTrabajoController', 'create');
-} elseif (preg_match('#ordenes/(\d+)#', $uri, $matches) && $method === 'PUT') {
-    if (preg_match('#ordenes/(\d+)/estado#', $uri)) {
-        // PUT /api/ordenes/{id}/estado
-        callController('OrdenTrabajoController', 'cambiarEstado', [(int)$matches[1]]);
-    } else {
-        // PUT /api/ordenes/{id}
-        callController('OrdenTrabajoController', 'update', [(int)$matches[1]]);
-    }
+} elseif (preg_match('#ordenes/(\d+)$#', $uri, $matches) && $method === 'PUT') {
+    // PUT /api/ordenes/{id}
+    callController('OrdenTrabajoController', 'update', [(int)$matches[1]]);
+} elseif (preg_match('#ordenes/(\d+)/estado$#', $uri, $matches) && $method === 'PUT') {
+    // PUT /api/ordenes/{id}/estado
+    callController('OrdenTrabajoController', 'cambiarEstado', [(int)$matches[1]]);
 } elseif (preg_match('#ordenes/(\d+)/repuestos#', $uri, $matches) && $method === 'POST') {
     // POST /api/ordenes/{id}/repuestos
     callController('OrdenTrabajoController', 'asignarRepuestos', [(int)$matches[1]]);
@@ -205,7 +203,7 @@ elseif (preg_match('#repuestos(?:/(.*))?#', $uri, $matches) && $method === 'GET'
         // GET /api/repuestos
         callController('RepuestoController', 'index');
     }
-} elseif (preg_match('#repuestos#', $uri) && $method === 'POST') {
+} elseif (preg_match('#repuestos$#', $uri) && $method === 'POST') {
     // POST /api/repuestos
     callController('RepuestoController', 'create');
 } elseif (preg_match('#repuestos/(\d+)#', $uri, $matches) && $method === 'PUT') {
@@ -222,7 +220,7 @@ elseif (preg_match('#evidencias(?:/(.*))?#', $uri, $matches) && $method === 'GET
         // GET /api/evidencias/orden/{id}
         callController('EvidenciaController', 'getByOrden', [(int)$ordMatches[1]]);
     }
-} elseif (preg_match('#evidencias#', $uri) && $method === 'POST') {
+} elseif (preg_match('#evidencias$#', $uri) && $method === 'POST') {
     // POST /api/evidencias
     callController('EvidenciaController', 'create');
 } elseif (preg_match('#evidencias/(\d+)#', $uri, $matches) && $method === 'DELETE') {
@@ -236,7 +234,7 @@ elseif (preg_match('#presupuestos(?:/(.*))?#', $uri, $matches) && $method === 'G
         // GET /api/presupuestos/orden/{id}
         callController('PresupuestoController', 'getByOrden', [(int)$ordMatches[1]]);
     }
-} elseif (preg_match('#presupuestos#', $uri) && $method === 'POST') {
+} elseif (preg_match('#presupuestos$#', $uri) && $method === 'POST') {
     // POST /api/presupuestos
     callController('PresupuestoController', 'create');
 } elseif (preg_match('#presupuestos/(\d+)/respuesta#', $uri, $matches) && $method === 'PUT') {
@@ -267,7 +265,7 @@ elseif (preg_match('#usuarios/carga-mecanicos#', $uri) && $method === 'GET') {
     if (empty($matches[1])) {
         callController('UsuarioController', 'index');
     }
-} elseif (preg_match('#usuarios#', $uri) && $method === 'POST') {
+} elseif (preg_match('#usuarios$#', $uri) && $method === 'POST') {
     // POST /api/usuarios
     callController('UsuarioController', 'create');
 } elseif (preg_match('#usuarios/(\d+)#', $uri, $matches) && $method === 'PUT') {

@@ -143,7 +143,7 @@ class UsuarioController
         $db = \GemMotors\Config\Database::getInstance();
         
         $query = "
-            SELECT u.id, u.nombre, u.apellido, COUNT(mot.orden_id) as ots_activas
+            SELECT u.id, u.nombre, u.apellido, COUNT(ot.id) as ots_activas
             FROM usuarios u
             LEFT JOIN mecanico_ot mot ON u.id = mot.mecanico_id
             LEFT JOIN ordenes_trabajo ot ON mot.orden_id = ot.id AND ot.estado NOT IN ('entregado')

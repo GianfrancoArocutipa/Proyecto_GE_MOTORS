@@ -69,9 +69,10 @@ class RolMiddleware
             'GET' => ['administrador', 'mecanico']
         ],
         
-        // Asignar mecánicos a órdenes
+        // Asignar mecánicos a órdenes y actualizar horas
         'ordenes/mecanico' => [
-            'POST' => ['administrador']
+            'POST' => ['administrador'],
+            'PUT' => ['administrador', 'mecanico']
         ],
         
         // Estadísticas de órdenes (Dashboard)

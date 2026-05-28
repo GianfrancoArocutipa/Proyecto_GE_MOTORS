@@ -219,6 +219,7 @@ class OrdenTrabajoController
                 'apellido' => $orden->getMecanico()->apellido
             ] : null,
             'mecanicos_asignados' => $orden->getMecanicosAsignados(),
+            'repuestos_asignados' => $orden->getRepuestosAsignados(),
             'descripcion_problema' => $orden->descripcion_problema,
             'estado' => $orden->estado,
             'presupuesto_aprobado' => $orden->presupuesto_aprobado,
@@ -533,6 +534,7 @@ class OrdenTrabajoController
         }
 
         AuthMiddleware::requireAuth();
+        RolMiddleware::checkRole();
         // Puede ser admin o el propio mecánico (en un entorno más estricto validaríamos el ID del mecánico)
         
         $orden = OrdenTrabajo::find($id);

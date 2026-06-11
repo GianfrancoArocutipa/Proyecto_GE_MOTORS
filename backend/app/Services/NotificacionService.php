@@ -162,4 +162,73 @@ class NotificacionService
         
         return true;
     }
+
+    /**
+     * Simula el envío de correo electrónico con credenciales temporales
+     * @param string $email Email del nuevo usuario
+     * @param string $passwordTemporal Contraseña generada automáticamente
+     * @return boolean True si se simuló correctamente
+     */
+    public static function notificarNuevoUsuario(string $email, string $passwordTemporal): bool
+    {
+        $mensaje = "NUEVO USUARIO CREADO. Sus credenciales temporales son: Email='{$email}', Contraseña='{$passwordTemporal}'. Deberá cambiar su contraseña al iniciar sesión.";
+        
+        // Simular envío de correo electrónico
+        try {
+            $to = $email;
+            $subject = "Bienvenido a G&E Motors - Credenciales de acceso";
+            
+            // Registramos el éxito del envío simulado
+            error_log("[" . date('Y-m-d H:i:s') . "] EMAIL ENVIADO a {$to}: {$subject} - {$mensaje}");
+        } catch (\Exception $e) {
+            error_log("[" . date('Y-m-d H:i:s') . "] ERROR ENVIO EMAIL: " . $e->getMessage());
+            return false;
+        }
+        
+        return true;
+    }
+
+    /**
+     * Simula el envío de un PDF por correo electrónico al cliente
+     * @param int $ordenId ID de la orden
+     * @param string $tipoPdf Tipo de reporte (diagnostico, hoja_ruta, boleta_servicio)
+     * @return boolean True si se simuló correctamente
+     */
+    public static function enviarPdfCliente(int $ordenId, string $tipoPdf): bool
+    {
+        $orden = \GemMotors\Models\OrdenTrabajo::find($ordenId);
+        if ($orden === null) {
+            return false;
+        }
+
+        $cliente = $orden->getCliente();
+        if ($cliente === null || empty($cliente->email)) {
+            // Si el cliente no tiene email, no se puede enviar
+            error_log("[" . date('Y-m-d H:i:s') . "] ERROR ENVIO EMAIL: El cliente no tiene correo electrónico configurado.");
+            return false;
+        }
+
+        $nombres = [
+            'diagnostico' => 'Diagnóstico Automotriz (OBD-II)',
+            'hoja_ruta' => 'Hoja de Ruta',
+            'boleta_servicio' => 'Boleta de Servicio Electrónica'
+        ];
+        $nombreReporte = $nombres[$tipoPdf] ?? 'Reporte';
+
+        $mensaje = "Se adjunta el documento '{$nombreReporte}' correspondiente a la orden de trabajo {$orden->numero_ot}.";
+        
+        // Simular envío de correo electrónico con adjunto
+        try {
+            $to = $cliente->email;
+            $subject = "G&E Motors - Su {$nombreReporte}";
+            
+            // Registramos el éxito del envío simulado
+            error_log("[" . date('Y-m-d H:i:s') . "] EMAIL ENVIADO a {$to}: {$subject} - {$mensaje} (PDF Adjunto: {$tipoPdf}_{$orden->numero_ot}.pdf)");
+        } catch (\Exception $e) {
+            error_log("[" . date('Y-m-d H:i:s') . "] ERROR ENVIO EMAIL: " . $e->getMessage());
+            return false;
+        }
+        
+        return true;
+    }
 }

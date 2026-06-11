@@ -11,5 +11,9 @@ export const authService = {
   
   perfil() {
     return apiService.get('/auth/perfil')
+  },
+  
+  cambiarPassword(data) {
+    return apiService.put('/auth/cambiar-password', data)
   }
 }

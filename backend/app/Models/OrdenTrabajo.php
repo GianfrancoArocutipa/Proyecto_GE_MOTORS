@@ -215,6 +215,25 @@ class OrdenTrabajo
         }
 
         $db = Database::getInstance();
+
+        // Obtener el ID del usuario actual de la sesión (seteado por AuthMiddleware)
+        $usuarioId = null;
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        if (isset($_SESSION['jwt_payload']) && isset($_SESSION['jwt_payload']['id'])) {
+            $usuarioId = $_SESSION['jwt_payload']['id'];
+        }
+
+        // Insertar en historial_estados_ot
+        $stmtHistorial = $db->prepare('INSERT INTO historial_estados_ot (orden_id, estado_anterior, estado_nuevo, usuario_id) VALUES (:orden_id, :estado_anterior, :estado_nuevo, :usuario_id)');
+        $stmtHistorial->execute([
+            'orden_id' => $this->id,
+            'estado_anterior' => $this->estado,
+            'estado_nuevo' => $nuevoEstado,
+            'usuario_id' => $usuarioId
+        ]);
+
         $stmt = $db->prepare('UPDATE ordenes_trabajo SET estado = :estado WHERE id = :id');
         $stmt->execute([
             'id' => $this->id,
@@ -232,6 +251,21 @@ class OrdenTrabajo
                 'fecha_cierre' => $this->fecha_cierre
             ]);
         }
+    }
+
+    // Obtener historial de estados de la orden
+    public function getHistorialEstados(): array
+    {
+        $db = Database::getInstance();
+        $stmt = $db->prepare('
+            SELECT h.*, u.nombre as usuario_nombre, u.apellido as usuario_apellido 
+            FROM historial_estados_ot h 
+            LEFT JOIN usuarios u ON h.usuario_id = u.id 
+            WHERE h.orden_id = :orden_id 
+            ORDER BY h.created_at ASC
+        ');
+        $stmt->execute(['orden_id' => $this->id]);
+        return $stmt->fetchAll();
     }
 
     // Verificar si el vehículo tiene una OT activa (RN-01)

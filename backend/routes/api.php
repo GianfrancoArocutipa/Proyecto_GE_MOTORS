@@ -89,6 +89,8 @@ if (preg_match('#auth/login#', $uri) && $method === 'POST') {
     callController('AuthController', 'registro');
 } elseif (preg_match('#auth/perfil#', $uri) && $method === 'GET') {
     callController('AuthController', 'perfil');
+} elseif (preg_match('#auth/cambiar-password#', $uri) && $method === 'PUT') {
+    callController('AuthController', 'cambiarPassword');
 }
 
 // Rutas de Clientes
@@ -251,9 +253,10 @@ elseif (preg_match('#reportes/ingresos#', $uri) && $method === 'GET') {
     callController('ReporteController', 'getRotacionRepuestos');
 } elseif (preg_match('#reportes/tiempo-promedio#', $uri) && $method === 'GET') {
     callController('ReporteController', 'getTiempoPromedio');
+} elseif (preg_match('#reportes/pdf/orden/(\d+)/enviar$#', $uri, $matches) && $method === 'POST') {
+    callController('ReporteController', 'enviarPdfCorreo', [(int)$matches[1]]);
 } elseif (preg_match('#reportes/pdf/orden/(\d+)#', $uri, $matches) && $method === 'GET') {
-    $tipo = $_GET['tipo'] ?? '';
-    callController('ReporteController', 'generarPdf', [(int)$matches[1], $tipo]);
+    callController('ReporteController', 'generarPdf', [(int)$matches[1], $_GET['tipo'] ?? '']);
 } elseif (preg_match('#reportes/excel/inventario#', $uri) && $method === 'GET') {
     callController('ReporteController', 'exportarExcelInventario');
 }
@@ -273,8 +276,10 @@ elseif (preg_match('#usuarios/carga-mecanicos#', $uri) && $method === 'GET') {
 }
 
 // Rutas de Seguimiento Público (sin autenticación - Ley 29733)
-elseif (preg_match('#seguimiento/([^/]+)#', $uri, $matches) && $method === 'GET') {
+elseif (preg_match('#seguimiento/([^/]+)$#', $uri, $matches) && $method === 'GET') {
     callController('SeguimientoController', 'track', [$matches[1]]);
+} elseif (preg_match('#seguimiento/([^/]+)/presupuestos/(\d+)/respuesta$#', $uri, $matches) && $method === 'PUT') {
+    callController('SeguimientoController', 'responderPresupuesto', [$matches[1], (int)$matches[2]]);
 }
 
 // Si ninguna ruta coincidió, devolver 404 detallado

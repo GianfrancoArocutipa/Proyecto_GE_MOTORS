@@ -2,7 +2,21 @@
   <div class="p-6">
     <div class="flex justify-between items-center mb-6">
       <h2 class="text-2xl font-bold text-gray-900">Expediente OT #{{ orden?.numero_ot }}</h2>
-      <BaseButton variant="outline" @click="volverALista">Volver</BaseButton>
+      <div class="flex items-center space-x-2">
+        <select v-model="pdfType" class="border-gray-300 rounded-md shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500">
+          <option value="">Generar Reporte...</option>
+          <option value="diagnostico">Diagnóstico OBD-II</option>
+          <option value="hoja_ruta">Hoja de Ruta</option>
+          <option value="boleta">Boleta de Servicio</option>
+        </select>
+        <BaseButton v-if="pdfType" variant="primary" size="sm" @click="descargarPdf" :disabled="isPdfLoading">
+          <span v-if="isPdfLoading">...</span><span v-else>Descargar</span>
+        </BaseButton>
+        <BaseButton v-if="pdfType" variant="secondary" size="sm" @click="enviarPdf" :disabled="isPdfLoading">
+          <span v-if="isPdfLoading">...</span><span v-else>Enviar al Cliente</span>
+        </BaseButton>
+        <BaseButton variant="outline" @click="volverALista">Volver</BaseButton>
+      </div>
     </div>
 
     <BaseAlert v-if="alert" :show="true" :variant="alert.type" :message="alert.message" @update:show="alert = null" />
@@ -185,6 +199,52 @@ async function ejecutarTransicion({ observaciones }) {
 
 function volverALista() { 
   router.push({ name: 'Ordenes' }) 
+}
+
+// ===== PDF Handling =====
+const pdfType = ref('')
+const isPdfLoading = ref(false)
+
+async function descargarPdf() {
+  if (!pdfType.value || !orden.value?.id) return
+  isPdfLoading.value = true
+  try {
+    const url = `${import.meta.env.VITE_API_BASE || 'http://localhost:8000/api'}/reportes/pdf/orden/${orden.value.id}?tipo=${pdfType.value}`
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: { 'Authorization': `Bearer ${apiService.getToken()}` }
+    })
+    if (!response.ok) throw new Error('Error al generar PDF')
+    
+    const blob = await response.blob()
+    const objectUrl = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = objectUrl
+    link.download = `reporte_${pdfType.value}_${orden.value.numero_ot}.pdf`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(objectUrl)
+    
+    noti.addNotification({ type: 'success', message: 'PDF descargado exitosamente' })
+  } catch (err) {
+    noti.addNotification({ type: 'error', message: err.message || 'Error al descargar PDF' })
+  } finally {
+    isPdfLoading.value = false
+  }
+}
+
+async function enviarPdf() {
+  if (!pdfType.value || !orden.value?.id) return
+  isPdfLoading.value = true
+  try {
+    const response = await apiService.post(`/reportes/pdf/orden/${orden.value.id}/enviar?tipo=${pdfType.value}`)
+    noti.addNotification({ type: 'success', message: response.mensaje || 'PDF enviado exitosamente' })
+  } catch (err) {
+    noti.addNotification({ type: 'error', message: err.message || 'Error al enviar PDF' })
+  } finally {
+    isPdfLoading.value = false
+  }
 }
 
 // Initial fetch

@@ -8,6 +8,7 @@ CREATE TABLE usuarios (
     password_hash VARCHAR(255) NOT NULL,
     rol VARCHAR(20) NOT NULL CHECK (rol IN ('administrador', 'mecanico', 'cliente')),
     activo BOOLEAN DEFAULT TRUE,
+    forzar_cambio_password BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -131,3 +132,14 @@ CREATE INDEX idx_presupuestos_estado ON presupuestos (estado);
 -- Índices adicionales para rendimiento
 CREATE INDEX idx_ordenes_trabajo_cliente_estado ON ordenes_trabajo (cliente_id, estado);
 CREATE INDEX idx_ordenes_trabajo_vehiculo_estado ON ordenes_trabajo (vehiculo_id, estado);
+
+CREATE TABLE historial_estados_ot (
+    id SERIAL PRIMARY KEY,
+    orden_id INTEGER NOT NULL REFERENCES ordenes_trabajo(id) ON DELETE CASCADE,
+    estado_anterior VARCHAR(30) NOT NULL,
+    estado_nuevo VARCHAR(30) NOT NULL,
+    usuario_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_historial_orden ON historial_estados_ot (orden_id);

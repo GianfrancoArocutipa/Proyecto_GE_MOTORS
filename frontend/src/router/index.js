@@ -145,6 +145,18 @@ router.beforeEach((to, from, next) => {
       return next({ name: 'Login', query: { redirect: to.fullPath } })
     }
 
+    // Evitar navegación si el token exige cambiar contraseña
+    if (authStore.token) {
+      try {
+        const payload = JSON.parse(atob(authStore.token.split('.')[1]))
+        if (payload.requires_password_change) {
+          return next({ name: 'Login' })
+        }
+      } catch (e) {
+        // Ignorar errores de parsing aquí
+      }
+    }
+
     // If roles specified, check user role
     if (allowedRoles && allowedRoles.length) {
       const userRole = authStore.user?.rol || authStore.userRole

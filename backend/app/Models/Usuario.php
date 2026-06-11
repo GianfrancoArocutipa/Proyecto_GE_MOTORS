@@ -14,6 +14,7 @@ class Usuario
     public string $password_hash;
     public string $rol;
     public bool $activo;
+    public bool $forzar_cambio_password;
     public string $created_at;
 
     public function __construct(
@@ -24,6 +25,7 @@ class Usuario
         string $password_hash,
         string $rol,
         bool $activo,
+        bool $forzar_cambio_password,
         string $created_at
     ) {
         $this->id = $id;
@@ -33,6 +35,7 @@ class Usuario
         $this->password_hash = $password_hash;
         $this->rol = $rol;
         $this->activo = $activo;
+        $this->forzar_cambio_password = $forzar_cambio_password;
         $this->created_at = $created_at;
     }
 
@@ -53,6 +56,7 @@ class Usuario
                 $row['password_hash'],
                 $row['rol'],
                 filter_var($row['activo'], FILTER_VALIDATE_BOOLEAN), // Adaptado para booleanos de Postgres
+                filter_var($row['forzar_cambio_password'], FILTER_VALIDATE_BOOLEAN),
                 $row['created_at']
             );
         }
@@ -77,6 +81,7 @@ class Usuario
                 $row['password_hash'],
                 $row['rol'],
                 filter_var($row['activo'], FILTER_VALIDATE_BOOLEAN), // Adaptado para booleanos de Postgres
+                filter_var($row['forzar_cambio_password'], FILTER_VALIDATE_BOOLEAN),
                 $row['created_at']
             );
         }
@@ -101,6 +106,7 @@ class Usuario
                 $row['password_hash'],
                 $row['rol'],
                 filter_var($row['activo'], FILTER_VALIDATE_BOOLEAN),
+                filter_var($row['forzar_cambio_password'], FILTER_VALIDATE_BOOLEAN),
                 $row['created_at']
             );
         }
@@ -112,9 +118,10 @@ class Usuario
     public static function create(array $data): self
     {
         $db = Database::getInstance();
-        $stmt = $db->prepare('INSERT INTO usuarios (nombre, apellido, email, password_hash, rol, activo) VALUES (:nombre, :apellido, :email, :password_hash, :rol, :activo)');
+        $stmt = $db->prepare('INSERT INTO usuarios (nombre, apellido, email, password_hash, rol, activo, forzar_cambio_password) VALUES (:nombre, :apellido, :email, :password_hash, :rol, :activo, :forzar_cambio_password)');
         
         $activoBool = isset($data['activo']) ? filter_var($data['activo'], FILTER_VALIDATE_BOOLEAN) : true;
+        $forzarCambio = isset($data['forzar_cambio_password']) ? filter_var($data['forzar_cambio_password'], FILTER_VALIDATE_BOOLEAN) : false;
 
         $stmt->execute([
             'nombre' => $data['nombre'],
@@ -122,7 +129,8 @@ class Usuario
             'email' => $data['email'],
             'password_hash' => $data['password_hash'],
             'rol' => $data['rol'],
-            'activo' => $activoBool ? 'true' : 'false' // En Postgres se envían cadenas booleanas nativas
+            'activo' => $activoBool ? 'true' : 'false', // En Postgres se envían cadenas booleanas nativas
+            'forzar_cambio_password' => $forzarCambio ? 'true' : 'false'
         ]);
 
         // En PostgreSQL pasamos el nombre de la secuencia de la tabla para recuperar el ID
@@ -136,6 +144,7 @@ class Usuario
             $data['password_hash'],
             $data['rol'],
             $activoBool,
+            $forzarCambio,
             date('Y-m-d H:i:s')
         );
     }
@@ -179,11 +188,12 @@ class Usuario
     public function changePassword(string $newPasswordHash): void
     {
         $db = Database::getInstance();
-        $stmt = $db->prepare('UPDATE usuarios SET password_hash = :password_hash WHERE id = :id');
+        $stmt = $db->prepare('UPDATE usuarios SET password_hash = :password_hash, forzar_cambio_password = false WHERE id = :id');
         $stmt->execute([
             'id' => $this->id,
             'password_hash' => $newPasswordHash
         ]);
         $this->password_hash = $newPasswordHash;
+        $this->forzar_cambio_password = false;
     }
 }

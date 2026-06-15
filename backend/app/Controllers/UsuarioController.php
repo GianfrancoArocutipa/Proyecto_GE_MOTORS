@@ -58,18 +58,27 @@ class UsuarioController
 
         $nombre = $input['nombre'] ?? '';
         $email = $input['email'] ?? '';
-        $password = $input['password'] ?? '';
         $rol = $input['rol'] ?? 'mecanico';
         $activo = isset($input['activo']) ? (bool)$input['activo'] : true;
 
-        if (empty($nombre) || empty($email) || empty($password)) {
-            App::jsonResponse(false, null, 'Nombre, email y contraseña son requeridos', 400);
+        if (empty($nombre) || empty($email)) {
+            App::jsonResponse(false, null, 'Nombre y email son requeridos', 400);
             return;
         }
 
         try {
-            // Cifrar la contraseña antes de guardarla (Seguridad)
-            $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
+            // Verificar si el correo ya existe
+            $existente = Usuario::findByEmail($email);
+            if ($existente !== null) {
+                App::jsonResponse(false, null, 'El correo electrónico ya pertenece a un usuario existente.', 409);
+                return;
+            }
+
+            // Generar contraseña temporal aleatoria (8 caracteres)
+            $passwordTemporal = substr(str_shuffle('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'), 0, 8);
+            
+            // Cifrar la contraseña antes de guardarla
+            $hashedPassword = password_hash($passwordTemporal, PASSWORD_BCRYPT);
 
             $usuario = Usuario::create([
                 'nombre' => $nombre,
@@ -77,10 +86,21 @@ class UsuarioController
                 'email' => $email,
                 'password_hash' => $hashedPassword,
                 'rol' => $rol,
-                'activo' => $activo
+                'activo' => $activo,
+                'forzar_cambio_password' => true
             ]);
+            
+            // Simular envío de correo con credenciales
+            \GemMotors\Services\NotificacionService::notificarNuevoUsuario($email, $passwordTemporal);
 
-            App::jsonResponse(true, ['id' => $usuario->id, 'nombre' => $usuario->nombre, 'email' => $usuario->email, 'rol' => $usuario->rol, 'activo' => $usuario->activo], 'Usuario creado exitosamente', 201);
+            App::jsonResponse(true, [
+                'id' => $usuario->id, 
+                'nombre' => $usuario->nombre, 
+                'email' => $usuario->email, 
+                'rol' => $usuario->rol, 
+                'activo' => $usuario->activo,
+                'forzar_cambio_password' => $usuario->forzar_cambio_password
+            ], 'Usuario creado exitosamente. Se han enviado las credenciales temporales por correo.', 201);
         } catch (\Exception $e) {
             App::jsonResponse(false, null, 'Error al crear usuario: ' . $e->getMessage(), 500);
         }

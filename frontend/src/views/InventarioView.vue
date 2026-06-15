@@ -81,12 +81,22 @@
         <p><strong>OEM:</strong> {{ selectedRepuesto.codigo_oem }}</p>
         <p><strong>Nombre:</strong> {{ selectedRepuesto.nombre }}</p>
         <p><strong>Stock:</strong> {{ selectedRepuesto.stock }}</p>
-        <div class="flex justify-end space-x-3 mt-4">
-          <BaseButton variant="outline" @click="editRepuesto(selectedRepuesto)">Editar</BaseButton>
-          <BaseButton variant="danger" @click="deleteRepuesto(selectedRepuesto.id)">Eliminar</BaseButton>
+        <div class="flex justify-between mt-4">
+          <BaseButton variant="outline" @click="showHistorialModal = true; showRepuestoDetailModal = false">
+            Ver Historial
+          </BaseButton>
+          <div class="flex space-x-3">
+            <BaseButton variant="outline" @click="editRepuesto(selectedRepuesto)">Editar</BaseButton>
+            <BaseButton variant="danger" @click="deleteRepuesto(selectedRepuesto.id)">Eliminar</BaseButton>
+          </div>
         </div>
       </div>
     </BaseModal>
+
+    <RepuestoHistorialModal 
+      v-model:show="showHistorialModal" 
+      :repuesto="selectedRepuesto" 
+    />
   </div>
 </template>
 
@@ -100,6 +110,7 @@ import BaseModal from '@/components/shared/BaseModal.vue' // Importar BaseModal
 import BaseButton from '@/components/shared/BaseButton.vue' // Importar BaseButton
 import BaseTable from '@/components/shared/BaseTable.vue'
 import BaseAlert from '@/components/shared/BaseAlert.vue'
+import RepuestoHistorialModal from '@/views/RepuestoHistorialModal.vue'
 
 const notificacionesStore = useNotificacionesStore()
 
@@ -111,6 +122,7 @@ const alert = ref(null)
 const editingRepuesto = ref(null)
 const showCreateRepuestoModal = ref(false)
 const showRepuestoDetailModal = ref(false)
+const showHistorialModal = ref(false)
 const selectedRepuesto = ref(null)
 const savingRepuesto = ref(false)
 const oemError = ref('')

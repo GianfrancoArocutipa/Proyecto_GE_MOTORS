@@ -89,6 +89,8 @@ if (preg_match('#auth/login#', $uri) && $method === 'POST') {
     callController('AuthController', 'registro');
 } elseif (preg_match('#auth/perfil#', $uri) && $method === 'GET') {
     callController('AuthController', 'perfil');
+} elseif (preg_match('#auth/cambiar-password#', $uri) && $method === 'PUT') {
+    callController('AuthController', 'cambiarPassword');
 }
 
 // Rutas de Clientes
@@ -113,10 +115,12 @@ elseif (preg_match('#clientes/(\d+)/historial#', $uri, $matches) && $method === 
 }
 
 // Rutas de Vehículos
-// Rutas de Vehículos
 elseif (preg_match('#vehiculos/(\d+)/diagnosticos#', $uri, $matches) && $method === 'GET') {
     // GET /api/vehiculos/{id}/diagnosticos — debe ir antes de la ruta genérica {id}
     callController('VehiculoController', 'getDiagnosticos', [(int)$matches[1]]);
+} elseif (preg_match('#vehiculos/(\d+)/historial#', $uri, $matches) && $method === 'GET') {
+    // GET /api/vehiculos/{id}/historial
+    callController('VehiculoController', 'getHistorial', [(int)$matches[1]]);
 } elseif (preg_match('#vehiculos/(\d+)$#', $uri, $matches) && $method === 'GET') {
     // GET /api/vehiculos/{id}
     callController('VehiculoController', 'show', [(int)$matches[1]]);
@@ -191,8 +195,10 @@ elseif (preg_match('#diagnosticos(?:/(.*))?#', $uri, $matches) && $method === 'G
     }
 }
 
-// Rutas de Repuestos
-elseif (preg_match('#repuestos(?:/(.*))?#', $uri, $matches) && $method === 'GET') {
+// Rutas de Repuestos e Inventario
+elseif (preg_match('#repuestos/(\d+)/historial#', $uri, $matches) && $method === 'GET') {
+    callController('RepuestoController', 'getHistorialConsumo', [(int)$matches[1]]);
+} elseif (preg_match('#repuestos(?:/(.*))?#', $uri, $matches) && $method === 'GET') {
     if (isset($matches[1]) && $matches[1] === 'oem' && preg_match('#repuestos/oem/(.+)#', $uri, $oemMatches)) {
         // GET /api/repuestos/oem/{codigo}
         callController('RepuestoController', 'getByOem', [$oemMatches[1]]);
@@ -251,9 +257,10 @@ elseif (preg_match('#reportes/ingresos#', $uri) && $method === 'GET') {
     callController('ReporteController', 'getRotacionRepuestos');
 } elseif (preg_match('#reportes/tiempo-promedio#', $uri) && $method === 'GET') {
     callController('ReporteController', 'getTiempoPromedio');
+} elseif (preg_match('#reportes/pdf/orden/(\d+)/enviar$#', $uri, $matches) && $method === 'POST') {
+    callController('ReporteController', 'enviarPdfCorreo', [(int)$matches[1]]);
 } elseif (preg_match('#reportes/pdf/orden/(\d+)#', $uri, $matches) && $method === 'GET') {
-    $tipo = $_GET['tipo'] ?? '';
-    callController('ReporteController', 'generarPdf', [(int)$matches[1], $tipo]);
+    callController('ReporteController', 'generarPdf', [(int)$matches[1], $_GET['tipo'] ?? '']);
 } elseif (preg_match('#reportes/excel/inventario#', $uri) && $method === 'GET') {
     callController('ReporteController', 'exportarExcelInventario');
 }
@@ -273,8 +280,10 @@ elseif (preg_match('#usuarios/carga-mecanicos#', $uri) && $method === 'GET') {
 }
 
 // Rutas de Seguimiento Público (sin autenticación - Ley 29733)
-elseif (preg_match('#seguimiento/([^/]+)#', $uri, $matches) && $method === 'GET') {
+elseif (preg_match('#seguimiento/([^/]+)$#', $uri, $matches) && $method === 'GET') {
     callController('SeguimientoController', 'track', [$matches[1]]);
+} elseif (preg_match('#seguimiento/([^/]+)/presupuestos/(\d+)/respuesta$#', $uri, $matches) && $method === 'PUT') {
+    callController('SeguimientoController', 'responderPresupuesto', [$matches[1], (int)$matches[2]]);
 }
 
 // Si ninguna ruta coincidió, devolver 404 detallado

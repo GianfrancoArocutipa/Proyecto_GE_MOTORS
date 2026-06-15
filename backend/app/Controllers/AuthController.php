@@ -121,31 +121,19 @@ class AuthController
 
 
         // Verificar que el usuario esté activo
-
         if (!$usuario->activo) {
-
             App::jsonResponse(false, null, 'Cuenta desactivada', 403);
-
             return;
-
         }
 
-
-
         // Generar token JWT usando las propiedades estáticas corregidas
-
         $tokenPayload = [
-
             'id' => $usuario->id,
-
             'email' => $usuario->email,
-
             'rol' => $usuario->rol,
-
+            'requires_password_change' => $usuario->forzar_cambio_password,
             'iat' => time(),
-
             'exp' => time() + (App::$jwtExpiry ?? 3600)
-
         ];
 
 
@@ -163,26 +151,18 @@ class AuthController
 
 
         // Devolver token y datos del usuario (sin contraseña)
-
+        $isForced = $usuario->forzar_cambio_password;
         App::jsonResponse(true, [
-
             'token' => $jwt,
-
+            'requires_password_change' => $isForced,
             'usuario' => [
-
                 'id' => $usuario->id,
-
                 'nombre' => $usuario->nombre,
-
                 'apellido' => $usuario->apellido,
-
                 'email' => $usuario->email,
-
                 'rol' => $usuario->rol
-
             ]
-
-        ], 'Inicio de sesión exitoso');
+        ], $isForced ? 'Debe cambiar su contraseña' : 'Inicio de sesión exitoso');
 
     }
 
@@ -458,6 +438,74 @@ class AuthController
     }
 
 
+
+    /**
+     * Cambiar la contraseña forzada o de forma manual
+     * PUT /api/auth/cambiar-password
+     */
+    public static function cambiarPassword(): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'PUT') {
+            App::jsonResponse(false, null, 'Método no permitido', 405);
+            return;
+        }
+
+        // Validar token temporal
+        AuthMiddleware::requireAuth();
+
+        $payload = $_SESSION['jwt_payload'] ?? null;
+        if ($payload === null) {
+            App::jsonResponse(false, null, 'Token inválido', 401);
+            return;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true);
+        $passwordActual = $input['password_actual'] ?? '';
+        $nuevoPassword = $input['password_nuevo'] ?? '';
+
+        if (empty($passwordActual) || empty($nuevoPassword)) {
+            App::jsonResponse(false, null, 'Ambas contraseñas son requeridas', 400);
+            return;
+        }
+
+        $usuario = Usuario::find($payload['id']);
+        if ($usuario === null) {
+            App::jsonResponse(false, null, 'Usuario no encontrado', 404);
+            return;
+        }
+
+        if (!password_verify($passwordActual, $usuario->password_hash)) {
+            App::jsonResponse(false, null, 'Contraseña actual incorrecta', 401);
+            return;
+        }
+
+        $newHash = password_hash($nuevoPassword, PASSWORD_DEFAULT);
+        $usuario->changePassword($newHash);
+
+        // Generar nuevo token completo sin el flag
+        $tokenPayload = [
+            'id' => $usuario->id,
+            'email' => $usuario->email,
+            'rol' => $usuario->rol,
+            'iat' => time(),
+            'exp' => time() + (App::$jwtExpiry ?? 3600)
+        ];
+        
+        $jwt = self::generateJWT($tokenPayload, App::$jwtSecret ?? 'clave_segura_minimo_32_chars');
+        
+        $_SESSION['jwt_payload'] = $tokenPayload;
+        session_write_close();
+
+        App::jsonResponse(true, [
+            'token' => $jwt,
+            'usuario' => [
+                'id' => $usuario->id,
+                'nombre' => $usuario->nombre,
+                'email' => $usuario->email,
+                'rol' => $usuario->rol
+            ]
+        ], 'Contraseña actualizada exitosamente');
+    }
 
     /**
 

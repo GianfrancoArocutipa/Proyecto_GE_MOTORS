@@ -47,6 +47,12 @@ class OrdenTrabajoController
             $filters['mecanico_id'] = (int)$_GET['mecanico_id'];
         }
 
+        // Forzar filtro si el usuario es mecánico
+        $payload = $_SESSION['jwt_payload'] ?? [];
+        if (($payload['rol'] ?? '') === 'mecanico') {
+            $filters['mecanico_id'] = (int)($payload['id'] ?? 0);
+        }
+
         // Obtener órdenes
         $ordenes = OrdenTrabajo::findAll($filters);
 
@@ -68,7 +74,8 @@ class OrdenTrabajoController
                 'created_at' => $orden->created_at,
                 'cliente' => [
                     'id' => $orden->getCliente()->id,
-                    'nombre' => $orden->getCliente()->nombre
+                    'nombre' => $orden->getCliente()->nombre,
+                    'codigo_seguimiento' => $orden->getCliente()->codigo_seguimiento
                 ],
                 'vehiculo' => [
                     'id' => $orden->getVehiculo()->id,
@@ -205,7 +212,8 @@ class OrdenTrabajoController
             'cliente' => [
                 'id' => $orden->getCliente()->id,
                 'nombre' => $orden->getCliente()->nombre,
-                'dni_ruc' => $orden->getCliente()->dni_ruc
+                'dni_ruc' => $orden->getCliente()->dni_ruc,
+                'codigo_seguimiento' => $orden->getCliente()->codigo_seguimiento
             ],
             'vehiculo' => [
                 'id' => $orden->getVehiculo()->id,

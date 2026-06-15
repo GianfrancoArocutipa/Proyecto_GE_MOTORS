@@ -34,5 +34,10 @@ export const repuestoService = {
   // GET /api/repuestos/stock-bajo
   getStockBajo() {
     return apiService.get('/repuestos/stock-bajo')
+  },
+  
+  // GET /api/repuestos/{id}/historial
+  getHistorial(id) {
+    return apiService.get(`/repuestos/${id}/historial`)
   }
 }

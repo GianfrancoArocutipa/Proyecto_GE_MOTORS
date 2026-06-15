@@ -17,9 +17,8 @@
         <input v-model="form.email" type="email" class="w-full px-3 py-2 border rounded-md" required :disabled="!!usuario" />
       </div>
 
-      <div v-if="!usuario">
-        <label class="block text-sm font-medium text-gray-700">Contraseña</label>
-        <input v-model="form.password" type="password" class="w-full px-3 py-2 border rounded-md" required />
+      <div v-if="!usuario" class="p-3 bg-blue-50 text-blue-700 rounded-md text-sm">
+        La contraseña temporal se generará automáticamente y será enviada por correo al usuario.
       </div>
 
       <div>
@@ -67,7 +66,6 @@ const emit = defineEmits(['update:show', 'saved', 'close'])
 const form = reactive({
   nombre: '',
   email: '',
-  password: '',
   rol: '',
   activo: true
 })
@@ -112,7 +110,6 @@ function handleClose() {
 function resetForm() {
   form.nombre = ''
   form.email = ''
-  form.password = ''
   form.rol = ''
   form.activo = true
 }

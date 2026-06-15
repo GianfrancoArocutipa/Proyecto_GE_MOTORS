@@ -18,7 +18,7 @@
       @saved="fetchData" 
     />
     
-    <DiagnosticosModal 
+    <VehiculoHistorialModal 
       v-model:show="showDiag" 
       :vehicle="selectedVehicle" 
     />
@@ -35,7 +35,7 @@ import { useNotificacionesStore } from '@/stores/notificaciones'
 import BaseButton from '@/components/shared/BaseButton.vue'
 import BaseTable from '@/components/shared/BaseTable.vue'
 import VehiculoFormModal from '@/views/VehiculoFormModal.vue'
-import DiagnosticosModal from '@/views/DiagnosticosModal.vue'
+import VehiculoHistorialModal from '@/views/VehiculoHistorialModal.vue'
 
 const vehicleColumns = [
   { key: 'placa', label: 'Placa' },

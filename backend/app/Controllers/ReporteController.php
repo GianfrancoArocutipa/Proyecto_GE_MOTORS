@@ -255,6 +255,67 @@ class ReporteController
     }
 
     /**
+     * Generar y enviar PDF de reporte por correo
+     * POST /api/reportes/pdf/orden/{id}/enviar?tipo={diagnostico|hoja_ruta|boleta}
+     */
+    public static function enviarPdfCorreo(int $id): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            App::jsonResponse(false, null, 'Método no permitido', 405);
+            return;
+        }
+
+        AuthMiddleware::requireAuth();
+        RolMiddleware::checkRole();
+
+        $tipo = $_GET['tipo'] ?? '';
+
+        $tiposPermitidos = ['diagnostico', 'hoja_ruta', 'boleta'];
+        if (!in_array($tipo, $tiposPermitidos, true)) {
+            App::jsonResponse(false, null, 'Tipo inválido. Use: diagnostico, hoja_ruta o boleta', 400);
+            return;
+        }
+
+        $orden = \GemMotors\Models\OrdenTrabajo::find($id);
+        if ($orden === null) {
+            App::jsonResponse(false, null, 'Orden de trabajo no encontrada', 404);
+            return;
+        }
+
+        try {
+            // Simulamos generar el PDF primero (para validar que funciona)
+            switch ($tipo) {
+                case 'diagnostico':
+                    $pdfContent = \GemMotors\Services\PDFService::generarDiagnostico($id);
+                    $tipoPdfNombre = 'diagnostico';
+                    break;
+                case 'hoja_ruta':
+                    $pdfContent = \GemMotors\Services\PDFService::generarHojaDeRuta($id);
+                    $tipoPdfNombre = 'hoja_ruta';
+                    break;
+                case 'boleta':
+                    $pdfContent = \GemMotors\Services\PDFService::generarBoletaDeServicio($id);
+                    $tipoPdfNombre = 'boleta_servicio';
+                    break;
+                default:
+                    App::jsonResponse(false, null, 'Tipo no soportado', 400);
+                    return;
+            }
+
+            // Llamar al servicio para enviar por correo
+            $enviado = \GemMotors\Services\NotificacionService::enviarPdfCliente($id, $tipoPdfNombre);
+
+            if ($enviado) {
+                App::jsonResponse(true, null, 'PDF generado y enviado por correo exitosamente');
+            } else {
+                App::jsonResponse(false, null, 'El PDF fue generado pero hubo un problema al enviarlo por correo', 500);
+            }
+        } catch (\Exception $e) {
+            App::jsonResponse(false, null, $e->getMessage(), 500);
+        }
+    }
+
+    /**
      * Exportar inventario a Excel
      * GET /api/reportes/excel/inventario
      */

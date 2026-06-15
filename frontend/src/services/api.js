@@ -30,6 +30,11 @@ class ApiService {
       ...options.headers
     }
 
+    const currentLocalToken = localStorage.getItem('gem_motors_token') || null;
+    if (this.token !== currentLocalToken) {
+      this.token = currentLocalToken;
+    }
+
     if (this.token) {
       headers.Authorization = `Bearer ${this.token}`
     }

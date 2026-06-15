@@ -24,5 +24,10 @@ export const vehiculoService = {
   // GET /api/vehiculos/{id}/diagnosticos
   getDiagnosticos(id) {
     return apiService.get(`/vehiculos/${id}/diagnosticos`)
+  },
+  
+  // GET /api/vehiculos/{id}/historial
+  getHistorial(id) {
+    return apiService.get(`/vehiculos/${id}/historial`)
   }
 }

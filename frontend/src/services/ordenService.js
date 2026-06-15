@@ -61,6 +61,10 @@ export const ordenService = {
     return apiService.get(`/seguimiento/${codigo}`)
   },
 
+  responderPresupuestoPublico(codigo, presupuestoId, data) {
+    return apiService.put(`/seguimiento/${codigo}/presupuestos/${presupuestoId}/respuesta`, data)
+  },
+
   asignarMecanico(id, data) {
     return apiService.post(`/ordenes/${id}/mecanico`, data)
   },

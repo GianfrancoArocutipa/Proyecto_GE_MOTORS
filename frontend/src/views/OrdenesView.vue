@@ -232,13 +232,25 @@
       </div>
 
       <template #footer>
-        <BaseButton
-          variant="outline"
-          size="md"
-          @click="showDetailModal = false"
-        >
-          Cerrar
-        </BaseButton>
+        <div class="flex justify-between w-full">
+          <BaseButton
+            v-if="otSeleccionada?.cliente?.codigo_seguimiento"
+            variant="outline"
+            size="md"
+            class="text-indigo-600 border-indigo-600 hover:bg-indigo-50"
+            @click="copiarLinkSeguimiento(otSeleccionada.cliente.codigo_seguimiento)"
+          >
+            Copiar Link de Seguimiento
+          </BaseButton>
+          <BaseButton
+            variant="outline"
+            size="md"
+            @click="showDetailModal = false"
+            class="ml-auto"
+          >
+            Cerrar
+          </BaseButton>
+        </div>
       </template>
     </BaseModal>
 
@@ -586,6 +598,28 @@ async function guardarHorasMecanico(mecanico) {
     mecanico.saving = false
   }
 }
+
+async function copiarLinkSeguimiento(codigo) {
+  if (!codigo) return
+  
+  const origin = window.location.origin
+  // Suponiendo que la ruta en Vue Router para Seguimiento Público es /seguimiento/:codigo
+  const link = `${origin}/seguimiento/${codigo}`
+  
+  try {
+    await navigator.clipboard.writeText(link)
+    notificacionesStore.addNotification({ 
+      type: 'success', 
+      message: 'Link copiado al portapapeles' 
+    })
+  } catch (err) {
+    notificacionesStore.addNotification({ 
+      type: 'error', 
+      message: 'Error al copiar el link. Cópielo manualmente: ' + link 
+    })
+  }
+}
+
 
 async function abrirModalCreacion() {
   try {

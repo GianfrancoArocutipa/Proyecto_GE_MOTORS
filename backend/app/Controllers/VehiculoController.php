@@ -249,4 +249,42 @@ class VehiculoController
         
         App::jsonResponse(true, array_values($data), 'Historial de diagnósticos obtenido');
     }
+
+    /**
+     * Obtener el historial completo de órdenes de trabajo de un vehículo
+     * GET /api/vehiculos/{id}/historial
+     */
+    public static function getHistorial(int $id): void
+    {
+        AuthMiddleware::requireAuth();
+        RolMiddleware::checkRole();
+
+        $vehiculo = Vehiculo::find($id);
+        if (!$vehiculo) {
+            App::jsonResponse(false, null, 'Vehículo no encontrado', 404);
+            return;
+        }
+
+        $ordenes = \GemMotors\Models\OrdenTrabajo::findAll(['vehiculo_id' => $id]);
+        
+        $data = [];
+        foreach ($ordenes as $orden) {
+            $repuestos = $orden->getRepuestosAsignados();
+            $mecanicos = $orden->getMecanicosAsignados();
+            
+            $data[] = [
+                'id' => $orden->id,
+                'numero_ot' => $orden->numero_ot,
+                'estado' => $orden->estado,
+                'descripcion_problema' => $orden->descripcion_problema,
+                'fecha_cierre' => $orden->fecha_cierre,
+                'created_at' => $orden->created_at,
+                'repuestos_count' => count($repuestos),
+                'repuestos' => array_map(fn($r) => ['nombre' => $r->nombre, 'cantidad' => $r->cantidad_asignada], $repuestos),
+                'mecanicos' => array_map(fn($m) => ['nombre' => $m->nombre . ' ' . $m->apellido], $mecanicos)
+            ];
+        }
+
+        App::jsonResponse(true, $data, 'Historial de vehículo obtenido exitosamente');
+    }
 }

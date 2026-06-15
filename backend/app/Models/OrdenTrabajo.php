@@ -99,7 +99,7 @@ class OrdenTrabajo
         }
 
         if (isset($filters['mecanico_id'])) {
-            $query .= ' AND mecanico_id = :mecanico_id';
+            $query .= ' AND (mecanico_id = :mecanico_id OR id IN (SELECT orden_id FROM mecanico_ot WHERE mecanico_id = :mecanico_id))';
             $params[':mecanico_id'] = $filters['mecanico_id'];
         }
 

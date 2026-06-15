@@ -278,6 +278,36 @@ class RepuestoController
     }
 
     /**
+     * Obtener el historial de consumo de un repuesto
+     * GET /api/repuestos/{id}/historial
+     */
+    public static function getHistorialConsumo(int $id): void
+    {
+        AuthMiddleware::requireAuth();
+        RolMiddleware::checkRole();
+
+        $repuesto = Repuesto::find($id);
+        if (!$repuesto) {
+            App::jsonResponse(false, null, 'Repuesto no encontrado', 404);
+            return;
+        }
+
+        $ordenes = $repuesto->getOrdenesTrabajo();
+        
+        $data = array_map(function($orden) {
+            return [
+                'orden_id' => $orden->id,
+                'numero_ot' => $orden->numero_ot,
+                'estado' => $orden->estado,
+                'cantidad' => $orden->cantidad_asignada,
+                'fecha_asignacion' => $orden->fecha_asignacion
+            ];
+        }, $ordenes);
+
+        App::jsonResponse(true, $data, 'Historial de consumo obtenido');
+    }
+
+    /**
      * Obtener repuesto por código OEM
      * GET /api/repuestos/oem/{codigo}
      */

@@ -265,6 +265,30 @@ class Repuesto
                 );
             }
 
+            // Acumular el costo en el presupuesto (RN-12)
+            $costoTotal = $repuesto->precio_unitario * $cantidad;
+            $stmt = $db->prepare('SELECT id, total FROM presupuestos WHERE orden_id = :orden_id');
+            $stmt->execute(['orden_id' => $ordenId]);
+            $presupuestoRow = $stmt->fetch();
+
+            if ($presupuestoRow) {
+                // Actualizar total
+                $nuevoTotal = (float)$presupuestoRow['total'] + $costoTotal;
+                $stmt = $db->prepare('UPDATE presupuestos SET total = :total WHERE id = :id');
+                $stmt->execute([
+                    'total' => $nuevoTotal,
+                    'id' => $presupuestoRow['id']
+                ]);
+            } else {
+                // Crear presupuesto
+                $stmt = $db->prepare('INSERT INTO presupuestos (orden_id, total, estado) VALUES (:orden_id, :total, :estado)');
+                $stmt->execute([
+                    'orden_id' => $ordenId,
+                    'total' => $costoTotal,
+                    'estado' => 'pendiente'
+                ]);
+            }
+
             $db->commit();
         } catch (\Exception $e) {
             $db->rollBack();

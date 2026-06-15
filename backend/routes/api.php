@@ -115,10 +115,12 @@ elseif (preg_match('#clientes/(\d+)/historial#', $uri, $matches) && $method === 
 }
 
 // Rutas de Vehículos
-// Rutas de Vehículos
 elseif (preg_match('#vehiculos/(\d+)/diagnosticos#', $uri, $matches) && $method === 'GET') {
     // GET /api/vehiculos/{id}/diagnosticos — debe ir antes de la ruta genérica {id}
     callController('VehiculoController', 'getDiagnosticos', [(int)$matches[1]]);
+} elseif (preg_match('#vehiculos/(\d+)/historial#', $uri, $matches) && $method === 'GET') {
+    // GET /api/vehiculos/{id}/historial
+    callController('VehiculoController', 'getHistorial', [(int)$matches[1]]);
 } elseif (preg_match('#vehiculos/(\d+)$#', $uri, $matches) && $method === 'GET') {
     // GET /api/vehiculos/{id}
     callController('VehiculoController', 'show', [(int)$matches[1]]);
@@ -193,8 +195,10 @@ elseif (preg_match('#diagnosticos(?:/(.*))?#', $uri, $matches) && $method === 'G
     }
 }
 
-// Rutas de Repuestos
-elseif (preg_match('#repuestos(?:/(.*))?#', $uri, $matches) && $method === 'GET') {
+// Rutas de Repuestos e Inventario
+elseif (preg_match('#repuestos/(\d+)/historial#', $uri, $matches) && $method === 'GET') {
+    callController('RepuestoController', 'getHistorialConsumo', [(int)$matches[1]]);
+} elseif (preg_match('#repuestos(?:/(.*))?#', $uri, $matches) && $method === 'GET') {
     if (isset($matches[1]) && $matches[1] === 'oem' && preg_match('#repuestos/oem/(.+)#', $uri, $oemMatches)) {
         // GET /api/repuestos/oem/{codigo}
         callController('RepuestoController', 'getByOem', [$oemMatches[1]]);

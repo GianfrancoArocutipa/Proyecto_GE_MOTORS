@@ -294,13 +294,22 @@
       </template>
       <div class="space-y-4">
         <div>
-          <label class="block text-sm font-medium text-gray-700">Seleccionar Repuesto</label>
-          <select v-model="repuestoForm.repuesto_id" class="w-full px-3 py-2 border rounded-md">
-            <option value="">Seleccione un repuesto del inventario...</option>
-            <option v-for="r in listaRepuestos" :key="r.id" :value="r.id" :disabled="r.stock <= 0">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Buscar y Seleccionar Repuesto</label>
+          <div class="relative mb-2">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg class="h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <input v-model="repuestoSearch" type="text" class="w-full pl-9 pr-3 py-2 border rounded-md focus:ring-indigo-500 focus:border-indigo-500" placeholder="Buscar por nombre o código OEM..." />
+          </div>
+          <select v-model="repuestoForm.repuesto_id" class="w-full px-3 py-2 border rounded-md focus:ring-indigo-500 focus:border-indigo-500" size="5">
+            <option value="" disabled>Seleccione un repuesto de la lista...</option>
+            <option v-for="r in filteredRepuestos" :key="r.id" :value="r.id" :disabled="r.stock <= 0">
               {{ r.nombre }} - {{ r.codigo_oem }} (Stock: {{ r.stock }})
             </option>
           </select>
+          <p v-if="filteredRepuestos.length === 0" class="text-xs text-amber-600 mt-1">No se encontraron repuestos con esa búsqueda.</p>
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700">Cantidad a utilizar</label>
@@ -363,7 +372,17 @@ const listaMecanicos = ref([])
 const mecanicoForm = reactive({ mecanico_id: '', horas_trabajadas: 0 })
 
 const listaRepuestos = ref([])
+const repuestoSearch = ref('')
 const repuestoForm = reactive({ repuesto_id: '', cantidad: 1 })
+
+const filteredRepuestos = computed(() => {
+  if (!repuestoSearch.value) return listaRepuestos.value
+  const query = repuestoSearch.value.toLowerCase()
+  return listaRepuestos.value.filter(r => 
+    r.nombre.toLowerCase().includes(query) || 
+    (r.codigo_oem && r.codigo_oem.toLowerCase().includes(query))
+  )
+})
 
 // Form state
 const orderForm = reactive({
@@ -549,6 +568,7 @@ async function abrirAsignarRepuesto() {
       listaRepuestos.value = response.data || []
       repuestoForm.cantidad = 1
       repuestoForm.repuesto_id = ''
+      repuestoSearch.value = ''
       showAssignRepuestoModal.value = true
     }
   } catch (err) {

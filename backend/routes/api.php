@@ -232,6 +232,9 @@ elseif (preg_match('#evidencias(?:/(.*))?#', $uri, $matches) && $method === 'GET
 } elseif (preg_match('#evidencias/(\d+)#', $uri, $matches) && $method === 'DELETE') {
     // DELETE /api/evidencias/{id}
     callController('EvidenciaController', 'delete', [(int)$matches[1]]);
+} elseif (preg_match('#evidencias/(\d+)#', $uri, $matches) && $method === 'PUT') {
+    // PUT /api/evidencias/{id}
+    callController('EvidenciaController', 'update', [(int)$matches[1]]);
 }
 
 // Rutas de Presupuestos
@@ -261,6 +264,8 @@ elseif (preg_match('#reportes/ingresos#', $uri) && $method === 'GET') {
     callController('ReporteController', 'enviarPdfCorreo', [(int)$matches[1]]);
 } elseif (preg_match('#reportes/pdf/orden/(\d+)#', $uri, $matches) && $method === 'GET') {
     callController('ReporteController', 'generarPdf', [(int)$matches[1], $_GET['tipo'] ?? '']);
+} elseif (preg_match('#reportes/pdf/inventario#', $uri) && $method === 'GET') {
+    callController('ReporteController', 'exportarPdfInventario');
 } elseif (preg_match('#reportes/excel/inventario#', $uri) && $method === 'GET') {
     callController('ReporteController', 'exportarExcelInventario');
 }

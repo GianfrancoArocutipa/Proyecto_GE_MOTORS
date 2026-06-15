@@ -29,7 +29,8 @@ class UsuarioController
                 'apellido' => $usuario->apellido,
                 'email' => $usuario->email,
                 'rol' => $usuario->rol,
-                'activo' => $usuario->activo
+                'activo' => $usuario->activo,
+                'created_at' => property_exists($usuario, 'created_at') ? $usuario->created_at : date('Y-m-d H:i:s')
             ];
         }, $usuarios);
 
@@ -57,6 +58,7 @@ class UsuarioController
         }
 
         $nombre = $input['nombre'] ?? '';
+        $apellido = $input['apellido'] ?? '';
         $email = $input['email'] ?? '';
         $rol = $input['rol'] ?? 'mecanico';
         $activo = isset($input['activo']) ? (bool)$input['activo'] : true;
@@ -82,7 +84,7 @@ class UsuarioController
 
             $usuario = Usuario::create([
                 'nombre' => $nombre,
-                'apellido' => '', // El formulario actual maneja nombre completo
+                'apellido' => $apellido,
                 'email' => $email,
                 'password_hash' => $hashedPassword,
                 'rol' => $rol,
@@ -130,10 +132,14 @@ class UsuarioController
 
         $rol = $input['rol'] ?? $usuario->rol;
         $activo = $input['activo'] ?? $usuario->activo;
+        $nombre = $input['nombre'] ?? $usuario->nombre;
+        $apellido = $input['apellido'] ?? $usuario->apellido;
 
         $usuario->update([
             'rol' => $rol,
-            'activo' => $activo
+            'activo' => $activo,
+            'nombre' => $nombre,
+            'apellido' => $apellido
         ]);
 
         App::jsonResponse(true, [
@@ -142,7 +148,8 @@ class UsuarioController
             'apellido' => $usuario->apellido,
             'email' => $usuario->email,
             'rol' => $usuario->rol,
-            'activo' => $usuario->activo
+            'activo' => $usuario->activo,
+            'created_at' => property_exists($usuario, 'created_at') ? $usuario->created_at : null
         ], 'Usuario actualizado');
     }
 

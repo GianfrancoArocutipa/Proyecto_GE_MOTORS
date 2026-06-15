@@ -64,9 +64,11 @@ const showModal = ref(false)
 
 const usuariosColumns = [
   { key: 'nombre', label: 'Nombre' },
+  { key: 'apellido', label: 'Apellido' },
   { key: 'email', label: 'Email' },
   { key: 'rol', label: 'Rol', format: (v) => v?.toUpperCase() },
   { key: 'activo', label: 'Estado', format: (v) => v ? 'Activo' : 'Inactivo' },
+  { key: 'created_at', label: 'Fecha Registro', format: (v) => v ? new Date(v).toLocaleDateString() : '-' },
   { key: 'actions', label: 'Acciones' }
 ]
 

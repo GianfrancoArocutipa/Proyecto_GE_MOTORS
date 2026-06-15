@@ -5,6 +5,7 @@
         Gestión de Órdenes de Trabajo
       </h2>
       <BaseButton
+        v-if="userRole === 'administrador'"
         variant="primary"
         size="md"
         @click="abrirModalCreacion"
@@ -36,6 +37,155 @@
       </svg>
       <p class="mt-4 text-lg text-gray-500">No hay órdenes de trabajo registradas</p>
       <p class="mt-2 text-sm text-gray-400">Haz clic en "Nueva Orden" para comenzar</p>
+    </div>
+
+    <!-- Vista Mecánico: Detalle Inline -->
+    <div v-else-if="userRole === 'mecanico'">
+      <div v-if="otSeleccionada" class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+        <div class="flex justify-between items-center mb-6">
+          <h3 class="text-xl font-bold text-gray-900">Detalle de Orden #{{ otSeleccionada?.numero_ot || '' }}</h3>
+        </div>
+
+        <!-- Pipeline -->
+        <div class="mb-6">
+          <h4 class="text-sm font-medium text-gray-700 mb-3">Estado actual del proceso</h4>
+          <OrdenEstadoPipeline
+            :estado-actual="otSeleccionada.estado"
+            :presupuesto-aprobado="otSeleccionada.presupuesto_aprobado || false"
+            :ot-id="otSeleccionada.id"
+            @transicion-estado="abrirTransicion"
+          />
+        </div>
+
+        <!-- Order details -->
+        <div class="space-y-4">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <p class="text-sm font-medium text-gray-500">Cliente</p>
+              <p class="text-sm text-gray-900">{{ otSeleccionada.cliente?.nombre || 'N/A' }}</p>
+            </div>
+            <div>
+              <p class="text-sm font-medium text-gray-500">Vehículo</p>
+              <p class="text-sm text-gray-900">
+                {{ otSeleccionada.vehiculo ? `${otSeleccionada.vehiculo.marca} ${otSeleccionada.vehiculo.modelo} - ${otSeleccionada.vehiculo.placa}` : 'N/A' }}
+              </p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <p class="text-sm font-medium text-gray-500">Fecha de ingreso</p>
+              <p class="text-sm text-gray-900">{{ formatDate(otSeleccionada.created_at) }}</p>
+            </div>
+          </div>
+
+          <!-- Mecánicos Asignados List -->
+          <div class="pt-4 border-t border-gray-200">
+            <div class="flex items-center justify-between mb-3">
+              <h4 class="text-sm font-medium text-gray-700">Mecánicos Asignados</h4>
+            </div>
+            <ul v-if="otSeleccionada.mecanicos_asignados && otSeleccionada.mecanicos_asignados.length > 0" class="space-y-2">
+              <li v-for="m in otSeleccionada.mecanicos_asignados" :key="m.asignacion_id" class="flex justify-between items-center bg-gray-50 p-2 rounded border border-gray-100">
+                <div>
+                  <span class="text-sm font-medium text-gray-800">{{ m.nombre }} {{ m.apellido }}</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                  <span class="text-xs text-gray-500">Horas:</span>
+                  <input v-if="(authStore.user?.id === m.mecanico_id) && otSeleccionada.estado !== 'entregado'" 
+                         type="number" step="0.5" min="0" class="w-16 px-1 py-1 text-sm border rounded" 
+                         v-model.number="m.horas_trabajadas" />
+                  <span v-else class="text-sm font-medium text-gray-900 w-12 text-right">{{ m.horas_trabajadas }}</span>
+                  <BaseButton v-if="(authStore.user?.id === m.mecanico_id) && otSeleccionada.estado !== 'entregado'" 
+                              variant="primary" size="sm" class="px-2 py-1 h-auto text-xs" 
+                              @click="guardarHorasMecanico(m)" :loading="m.saving">Guardar</BaseButton>
+                </div>
+              </li>
+            </ul>
+            <p v-else class="text-sm text-gray-500 italic">No hay mecánicos asignados a esta orden.</p>
+          </div>
+
+          <!-- Repuestos Asignados List -->
+          <div class="pt-4 border-t border-gray-200">
+            <div class="flex items-center justify-between mb-3">
+              <h4 class="text-sm font-medium text-gray-700">Repuestos Utilizados</h4>
+              <BaseButton 
+                v-if="otSeleccionada.estado !== 'entregado'" 
+                variant="link" size="sm" class="p-0" @click="abrirAsignarRepuesto"
+              >
+                + Añadir Repuesto
+              </BaseButton>
+            </div>
+            <ul v-if="otSeleccionada.repuestos_asignados && otSeleccionada.repuestos_asignados.length > 0" class="space-y-2">
+              <li v-for="r in otSeleccionada.repuestos_asignados" :key="r.id" class="flex justify-between items-center bg-gray-50 p-2 rounded border border-gray-100">
+                <div class="flex items-center space-x-2">
+                  <span class="text-sm font-medium text-gray-800">{{ r.repuesto_nombre }}</span>
+                  <span class="text-xs text-gray-500">({{ r.codigo_oem }})</span>
+                </div>
+                <div class="flex items-center space-x-3">
+                  <span class="text-sm text-gray-600">Cant: {{ r.cantidad }}</span>
+                  <BaseButton v-if="otSeleccionada.estado !== 'entregado'" 
+                              variant="danger" size="sm" class="px-2 py-1 h-auto text-xs bg-red-100 text-red-700 border-red-200 hover:bg-red-200" 
+                              @click="eliminarRepuesto(r.repuesto_id)">
+                    ✕
+                  </BaseButton>
+                </div>
+              </li>
+            </ul>
+            <p v-else class="text-sm text-gray-500 italic">No hay repuestos asignados a esta orden.</p>
+          </div>
+
+          <!-- Evidencias Multimedia List -->
+          <div class="pt-4 border-t border-gray-200">
+            <div class="flex items-center justify-between mb-3">
+              <h4 class="text-sm font-medium text-gray-700">Evidencia Multimedia</h4>
+              <BaseButton 
+                v-if="otSeleccionada.estado !== 'entregado'" 
+                variant="link" size="sm" class="p-0" @click="abrirAñadirEvidencia"
+              >
+                + Añadir Evidencia
+              </BaseButton>
+            </div>
+            <div v-if="evidencias && evidencias.length > 0" class="grid grid-cols-2 gap-4">
+              <div v-for="e in evidencias" :key="e.id" class="bg-gray-50 rounded-lg p-3 border border-gray-100 flex flex-col relative group">
+                <div v-if="otSeleccionada.estado !== 'entregado'" class="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity z-10 flex gap-1">
+                  <BaseButton variant="primary" size="sm" class="px-2 py-1 h-auto text-xs rounded-full bg-blue-100 text-blue-700 hover:bg-blue-200 border-blue-200 shadow-sm" 
+                              @click="abrirEditarEvidencia(e)">
+                    ✎
+                  </BaseButton>
+                  <BaseButton variant="danger" size="sm" class="px-2 py-1 h-auto text-xs rounded-full bg-red-100 text-red-700 hover:bg-red-200 border-red-200 shadow-sm" 
+                              @click="eliminarEvidencia(e.id)">
+                    ✕
+                  </BaseButton>
+                </div>
+                <div class="mb-2">
+                  <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-800 uppercase tracking-wide">{{ e.etiqueta }}</span>
+                </div>
+                <div class="flex-grow">
+                  <img v-if="e.tipo === 'foto' || e.tipo === 'imagen'" :src="e.url_cloudinary || e.url" class="w-full h-32 object-cover rounded shadow-sm mb-2 cursor-pointer hover:opacity-90" @click="window.open(e.url_cloudinary || e.url, '_blank')" title="Click para ampliar" />
+                  <video v-else :src="e.url_cloudinary || e.url" class="w-full h-32 object-cover rounded shadow-sm mb-2 cursor-pointer hover:opacity-90" @click="window.open(e.url_cloudinary || e.url, '_blank')" controls title="Click para ampliar"></video>
+                </div>
+                <p class="text-sm text-gray-600 mt-2 line-clamp-2" :title="e.descripcion">{{ e.descripcion }}</p>
+              </div>
+            </div>
+            <p v-else class="text-sm text-gray-500 italic">No hay evidencias multimedia en esta orden.</p>
+          </div>
+        </div>
+        
+        <div class="mt-8 pt-4 border-t border-gray-200 flex gap-2 overflow-x-auto" v-if="ordenes.length > 1">
+           <span class="text-sm text-gray-500 mr-2 flex items-center">Tus otras asignaciones:</span>
+           <button v-for="o in ordenes" :key="o.id" @click="verDetalle(o)" 
+              :class="['px-3 py-1 rounded text-sm transition-colors border', o.id === otSeleccionada?.id ? 'bg-indigo-50 border-indigo-500 font-bold text-indigo-700' : 'bg-white hover:bg-gray-50']">
+              {{ o.numero_ot }}
+           </button>
+        </div>
+      </div>
+      <div v-else class="text-center py-12">
+        <svg class="mx-auto h-12 w-12 text-indigo-400 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <p class="mt-4 text-gray-500">Cargando tu orden...</p>
+      </div>
     </div>
 
     <!-- Data Table -->
@@ -113,7 +263,7 @@
     </BaseModal>
 
     <!-- Detail Modal -->
-    <BaseModal v-model:show="showDetailModal" @close="resetDetail">
+    <BaseModal v-if="userRole !== 'mecanico'" v-model:show="showDetailModal" @close="resetDetail">
       <template #header>
         <h3 class="text-lg font-medium text-gray-900">
           Detalle de Orden #{{ otSeleccionada?.numero_ot || '' }}
@@ -150,7 +300,7 @@
           <div class="grid grid-cols-2 gap-4">
             <div>
               <p class="text-sm font-medium text-gray-500">Fecha de ingreso</p>
-              <p class="text-sm text-gray-900">{{ formatDate(otSeleccionada.fecha_ingreso) }}</p>
+              <p class="text-sm text-gray-900">{{ formatDate(otSeleccionada.created_at) }}</p>
             </div>
             <!-- El botón de Asignar ahora se movió al título de Mecánicos Asignados -->
           </div>
@@ -214,6 +364,42 @@
               </li>
             </ul>
             <p v-else class="text-sm text-gray-500 italic">No hay repuestos asignados a esta orden.</p>
+          </div>
+
+          <!-- Evidencias Multimedia List (Admin) -->
+          <div class="pt-4 border-t border-gray-200">
+            <div class="flex items-center justify-between mb-3">
+              <h4 class="text-sm font-medium text-gray-700">Evidencia Multimedia</h4>
+              <BaseButton 
+                v-if="(userRole === 'administrador' || userRole === 'mecanico') && otSeleccionada.estado !== 'entregado'" 
+                variant="link" size="sm" class="p-0" @click="abrirAñadirEvidencia"
+              >
+                + Añadir Evidencia
+              </BaseButton>
+            </div>
+            <div v-if="evidencias && evidencias.length > 0" class="grid grid-cols-2 gap-4">
+              <div v-for="e in evidencias" :key="e.id" class="bg-gray-50 rounded-lg p-3 border border-gray-100 flex flex-col relative group">
+                <div v-if="(userRole === 'administrador' || userRole === 'mecanico') && otSeleccionada.estado !== 'entregado'" class="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity z-10 flex gap-1">
+                  <BaseButton variant="primary" size="sm" class="px-2 py-1 h-auto text-xs rounded-full bg-blue-100 text-blue-700 hover:bg-blue-200 border-blue-200 shadow-sm" 
+                              @click="abrirEditarEvidencia(e)">
+                    ✎
+                  </BaseButton>
+                  <BaseButton variant="danger" size="sm" class="px-2 py-1 h-auto text-xs rounded-full bg-red-100 text-red-700 hover:bg-red-200 border-red-200 shadow-sm" 
+                              @click="eliminarEvidencia(e.id)">
+                    ✕
+                  </BaseButton>
+                </div>
+                <div class="mb-2">
+                  <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-800 uppercase tracking-wide">{{ e.etiqueta }}</span>
+                </div>
+                <div class="flex-grow">
+                  <img v-if="e.tipo === 'foto' || e.tipo === 'imagen'" :src="e.url_cloudinary || e.url" class="w-full h-32 object-cover rounded shadow-sm mb-2 cursor-pointer hover:opacity-90" @click="window.open(e.url_cloudinary || e.url, '_blank')" title="Click para ampliar" />
+                  <video v-else :src="e.url_cloudinary || e.url" class="w-full h-32 object-cover rounded shadow-sm mb-2 cursor-pointer hover:opacity-90" @click="window.open(e.url_cloudinary || e.url, '_blank')" controls title="Click para ampliar"></video>
+                </div>
+                <p class="text-sm text-gray-600 mt-2 line-clamp-2" :title="e.descripcion">{{ e.descripcion }}</p>
+              </div>
+            </div>
+            <p v-else class="text-sm text-gray-500 italic">No hay evidencias multimedia en esta orden.</p>
           </div>
 
           <!-- Budget status -->
@@ -328,6 +514,77 @@
         </BaseButton>
       </template>
     </BaseModal>
+
+    <!-- Assign Evidencia Modal -->
+    <BaseModal v-model:show="showAssignEvidenciaModal" @close="showAssignEvidenciaModal = false">
+      <template #header>
+        <h3 class="text-lg font-medium text-gray-900">Añadir Evidencia a OT #{{ otSeleccionada?.numero_ot }}</h3>
+      </template>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Archivo de Evidencia</label>
+          <div class="flex items-center justify-center w-full">
+            <label class="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+              <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                <svg class="w-8 h-8 mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                <p class="mb-2 text-sm text-gray-500"><span class="font-semibold">Click para subir</span> o arrastre un archivo</p>
+                <p class="text-xs text-gray-500">Imágenes (PNG, JPG) o Video (MP4)</p>
+              </div>
+              <input type="file" accept="image/*,video/*" class="hidden" @change="handleFileChange" />
+            </label>
+          </div>
+          <p v-if="evidenciaForm.url_cloudinary" class="text-xs text-green-600 mt-2 font-medium">✓ Archivo cargado correctamente (Simulación activa)</p>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Etapa de la Reparación</label>
+          <select v-model="evidenciaForm.etiqueta" class="w-full px-3 py-2 border rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+            <option value="antes">Antes de la reparación</option>
+            <option value="durante">Durante la reparación</option>
+            <option value="despues">Después de la reparación</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Descripción de lo reparado</label>
+          <textarea v-model="evidenciaForm.descripcion" rows="3" class="w-full px-3 py-2 border rounded-md focus:ring-indigo-500 focus:border-indigo-500" placeholder="Indique qué problema ocurría o qué se reparó..."></textarea>
+        </div>
+      </div>
+      <template #footer>
+        <BaseButton variant="outline" @click="showAssignEvidenciaModal = false">Cancelar</BaseButton>
+        <BaseButton 
+          variant="primary" 
+          :loading="assignEvidenciaLoadingState" 
+          :disabled="!evidenciaForm.url_cloudinary"
+          @click="handleAssignEvidencia"
+        >
+          Subir Evidencia
+        </BaseButton>
+      </template>
+    </BaseModal>
+
+    <!-- Edit Evidencia Modal -->
+    <BaseModal v-model:show="showEditEvidenciaModal" @close="showEditEvidenciaModal = false">
+      <template #header>
+        <h3 class="text-lg font-medium text-gray-900">Editar Evidencia</h3>
+      </template>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Etapa de la Reparación</label>
+          <select v-model="evidenciaEditForm.etiqueta" class="w-full px-3 py-2 border rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+            <option value="antes">Antes de la reparación</option>
+            <option value="durante">Durante la reparación</option>
+            <option value="despues">Después de la reparación</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Descripción de lo reparado</label>
+          <textarea v-model="evidenciaEditForm.descripcion" rows="3" class="w-full px-3 py-2 border rounded-md focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+        </div>
+      </div>
+      <template #footer>
+        <BaseButton variant="outline" @click="showEditEvidenciaModal = false">Cancelar</BaseButton>
+        <BaseButton variant="primary" :loading="editEvidenciaLoadingState" @click="handleEditEvidencia">Guardar Cambios</BaseButton>
+      </template>
+    </BaseModal>
   </div>
 </template>
 
@@ -362,14 +619,22 @@ const showDetailModal = ref(false)
 const showTransicionModal = ref(false)
 const showAssignMecanicoModal = ref(false)
 const showAssignRepuestoModal = ref(false)
+const showAssignEvidenciaModal = ref(false)
+const showEditEvidenciaModal = ref(false)
 
 const otSeleccionada = ref(null)
 const estadoObjetivo = ref(null)
 const transicionLoading = ref(false)
 const assignLoading = ref(false)
+const assignEvidenciaLoadingState = ref(false)
+const editEvidenciaLoadingState = ref(false)
 
 const listaMecanicos = ref([])
 const mecanicoForm = reactive({ mecanico_id: '', horas_trabajadas: 0 })
+
+const evidencias = ref([])
+const evidenciaForm = reactive({ tipo: 'foto', etiqueta: 'durante', descripcion: '', url_cloudinary: '' })
+const evidenciaEditForm = reactive({ id: null, etiqueta: '', descripcion: '' })
 
 const listaRepuestos = ref([])
 const repuestoSearch = ref('')
@@ -476,6 +741,11 @@ watch(() => ordenesData.value, (val) => {
       ...orden,
       cliente_nombre: orden.cliente?.nombre || 'N/A'
     }))
+
+    // Si es mecánico y hay órdenes, cargar el detalle de la primera automáticamente
+    if (userRole.value === 'mecanico' && ordenes.value.length > 0 && !otSeleccionada.value) {
+      verDetalle(ordenes.value[0])
+    }
   }
 })
 
@@ -605,6 +875,89 @@ async function eliminarRepuesto(repuestoId) {
   }
 }
 
+function handleFileChange(event) {
+  const file = event.target.files[0]
+  if (!file) return
+  
+  if (file.type.startsWith('video/')) {
+    evidenciaForm.tipo = 'video'
+    evidenciaForm.url_cloudinary = 'https://www.w3schools.com/html/mov_bbb.mp4'
+  } else {
+    evidenciaForm.tipo = 'foto'
+    const carImages = [
+      'https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1530046339160-ce3e530c7d2f?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1487754180451-c456f719a1fc?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1503376710356-69865111a33a?auto=format&fit=crop&w=800&q=80'
+    ]
+    evidenciaForm.url_cloudinary = carImages[Math.floor(Math.random() * carImages.length)]
+  }
+}
+
+function abrirEditarEvidencia(evidencia) {
+  evidenciaEditForm.id = evidencia.id
+  evidenciaEditForm.etiqueta = evidencia.etiqueta
+  evidenciaEditForm.descripcion = evidencia.descripcion || ''
+  showEditEvidenciaModal.value = true
+}
+
+async function handleEditEvidencia() {
+  editEvidenciaLoadingState.value = true
+  try {
+    await ordenService.actualizarEvidencia(evidenciaEditForm.id, evidenciaEditForm)
+    notificacionesStore.addNotification({ type: 'success', message: 'Evidencia actualizada correctamente' })
+    showEditEvidenciaModal.value = false
+    
+    if (otSeleccionada.value) {
+      verDetalle({ id: otSeleccionada.value.id })
+    }
+  } catch (err) {
+    notificacionesStore.addNotification({ type: 'error', message: err.message || 'Error al actualizar evidencia' })
+  } finally {
+    editEvidenciaLoadingState.value = false
+  }
+}
+
+async function abrirAñadirEvidencia() {
+  evidenciaForm.tipo = 'foto'
+  evidenciaForm.etiqueta = 'durante'
+  evidenciaForm.descripcion = ''
+  evidenciaForm.url_cloudinary = ''
+  showAssignEvidenciaModal.value = true
+}
+
+async function handleAssignEvidencia() {
+  assignEvidenciaLoadingState.value = true
+  try {
+    await ordenService.crearEvidencia(otSeleccionada.value.id, evidenciaForm)
+    notificacionesStore.addNotification({ type: 'success', message: 'Evidencia multimedia añadida correctamente' })
+    showAssignEvidenciaModal.value = false
+    
+    if (otSeleccionada.value) {
+      verDetalle({ id: otSeleccionada.value.id })
+    }
+  } catch (err) {
+    notificacionesStore.addNotification({ type: 'error', message: err.message || 'Error al subir evidencia' })
+  } finally {
+    assignEvidenciaLoadingState.value = false
+  }
+}
+
+async function eliminarEvidencia(evidenciaId) {
+  if (!confirm('¿Seguro que desea eliminar esta evidencia?')) return
+  try {
+    await ordenService.eliminarEvidencia(otSeleccionada.value.id, evidenciaId)
+    notificacionesStore.addNotification({ type: 'success', message: 'Evidencia eliminada correctamente' })
+    
+    if (otSeleccionada.value) {
+      verDetalle({ id: otSeleccionada.value.id })
+    }
+  } catch (err) {
+    notificacionesStore.addNotification({ type: 'error', message: err.message || 'Error al eliminar evidencia' })
+  }
+}
+
 async function guardarHorasMecanico(mecanico) {
   mecanico.saving = true
   try {
@@ -676,10 +1029,27 @@ async function verDetalle(orden) {
     const res = await ordenService.getById(orden.id)
     if (res && res.success) {
       otSeleccionada.value = res.data
-      showDetailModal.value = true
+      
+      try {
+        const eviRes = await ordenService.getEvidencias(orden.id)
+        if (eviRes && eviRes.success) {
+          evidencias.value = eviRes.data
+        } else {
+          evidencias.value = []
+        }
+      } catch (err) {
+        evidencias.value = []
+      }
+
+      if (userRole.value !== 'mecanico') {
+        showDetailModal.value = true
+      }
     }
-  } catch (e) {
-    notificacionesStore.addNotification({ type: 'error', message: 'Error al cargar detalles de la orden' })
+  } catch (err) {
+    notificacionesStore.addNotification({
+      type: 'error',
+      message: err.message || 'Error al obtener detalle de la orden'
+    })
   }
 }
 

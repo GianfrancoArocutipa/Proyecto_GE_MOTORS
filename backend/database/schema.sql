@@ -31,6 +31,7 @@ CREATE TABLE vehiculos (
     anio INTEGER NOT NULL CHECK (anio > 1900 AND anio <= EXTRACT(YEAR FROM CURRENT_DATE) + 1),
     vin VARCHAR(17) UNIQUE,
     color VARCHAR(30),
+    foto_url VARCHAR(500),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

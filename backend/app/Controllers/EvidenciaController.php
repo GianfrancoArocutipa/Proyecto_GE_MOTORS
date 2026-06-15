@@ -178,4 +178,44 @@ class EvidenciaController
             App::jsonResponse(false, null, $e->getMessage(), 400);
         }
     }
+
+    /**
+     * Actualizar evidencia (ej. descripción)
+     * PUT /api/evidencias/{id}
+     */
+    public static function update(int $id): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'PUT') {
+            App::jsonResponse(false, null, 'Método no permitido', 405);
+            return;
+        }
+
+        AuthMiddleware::requireAuth();
+        RolMiddleware::checkRole();
+
+        $evidencia = Evidencia::find($id);
+        if ($evidencia === null) {
+            App::jsonResponse(false, null, 'Evidencia no encontrada', 404);
+            return;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            App::jsonResponse(false, null, 'JSON inválido', 400);
+            return;
+        }
+
+        try {
+            $evidencia->update($input);
+            App::jsonResponse(true, [
+                'id' => $evidencia->id,
+                'descripcion' => $evidencia->descripcion,
+                'etiqueta' => $evidencia->etiqueta
+            ], 'Evidencia actualizada exitosamente');
+        } catch (\RuntimeException $e) {
+            App::jsonResponse(false, null, $e->getMessage(), 400);
+        } catch (\Exception $e) {
+            App::jsonResponse(false, null, $e->getMessage(), 400);
+        }
+    }
 }

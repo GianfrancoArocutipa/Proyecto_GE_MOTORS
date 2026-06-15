@@ -9,6 +9,9 @@
         <BaseButton variant="secondary" size="md" @click="exportToExcel">
           Exportar Excel
         </BaseButton>
+        <BaseButton variant="danger" size="md" @click="exportToPDF">
+          Exportar PDF
+        </BaseButton>
       </div>
     </div>
     
@@ -195,7 +198,6 @@ async function fetchRepuestos() {
 async function exportToExcel() {
   try {
     const blob = await reporteService.exportarExcelInventario()
-    // Crear un enlace temporal para forzar la descarga del archivo
     const url = window.URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
@@ -204,9 +206,26 @@ async function exportToExcel() {
     link.click()
     document.body.removeChild(link)
     window.URL.revokeObjectURL(url)
-    notificacionesStore.addNotification({ type: 'success', message: 'Exportado exitosamente', timeout: 3000 })
+    notificacionesStore.addNotification({ type: 'success', message: 'Excel exportado exitosamente', timeout: 3000 })
   } catch (err) {
-    alert.value = err.message || 'Error al exportar'
+    alert.value = err.message || 'Error al exportar a Excel'
+  }
+}
+
+async function exportToPDF() {
+  try {
+    const blob = await reporteService.exportarPdfInventario()
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', 'inventario_gem_motors.pdf')
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+    notificacionesStore.addNotification({ type: 'success', message: 'PDF exportado exitosamente', timeout: 3000 })
+  } catch (err) {
+    alert.value = err.message || 'Error al exportar a PDF'
   }
 }
 

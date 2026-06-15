@@ -84,7 +84,7 @@ const allMenuItems = [
   { name: 'Presupuestos', route: '/presupuestos', icon: '💰', roles: ['administrador'] },
   { name: 'Reportes', route: '/reportes', icon: '📈', roles: ['administrador'] },
   { name: 'Usuarios', route: '/usuarios', icon: '👤', roles: ['administrador'] },
-  { name: 'Seguimiento Público', route: '/seguimiento', icon: '🔎', roles: ['administrador', 'mecanico', 'cliente'] } // Note: we use a placeholder route; the actual route is /seguimiento/:codigo
+  { name: 'Seguimiento Público', route: '/seguimiento', icon: '🔎', roles: ['administrador', 'cliente'] } // Note: we use a placeholder route; the actual route is /seguimiento/:codigo
 ]
 
 // Filter menu items based on user role

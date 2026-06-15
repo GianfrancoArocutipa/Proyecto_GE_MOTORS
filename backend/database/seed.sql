@@ -13,12 +13,12 @@ INSERT INTO clientes (nombre, dni_ruc, telefono, correo, codigo_seguimiento) VAL
 ('Luis Ramirez', '11223344', '555555555', 'luis.ramirez@email.com', 'GEM003');
 
 -- Insertar vehículos (2 por cliente)
-INSERT INTO vehiculos (cliente_id, placa, marca, modelo, anio, vin, color) VALUES
-(1, 'ABC123', 'Toyota', 'Corolla', 2020, '1HGCM82633A004352', 'Blanco'),
-(1, 'XYZ789', 'Honda', 'Civic', 2019, '2HGFC2F59KH500001', 'Negro'),
-(2, 'DEF456', 'Chevrolet', 'Onix', 2021, '3GNCJKSB0JS555555', 'Rojo'),
-(2, 'GHI012', 'Hyundai', 'Accent', 2020, 'KMHCJ4ACxAU000000', 'Azul'),
-(3, 'JKL345', 'Kia', 'Rio', 2022, 'KNDJC2AU4N7000001', 'Verde'),
+INSERT INTO vehiculos (cliente_id, placa, marca, modelo, anio, vin, color, foto_url) VALUES
+(1, 'ABC123', 'Toyota', 'Corolla', 2020, '1HGCM82633A004352', 'Blanco', 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=800&q=80'),
+(1, 'XYZ789', 'Honda', 'Civic', 2019, '2HGFC2F59KH500001', 'Negro', 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=800&q=80'),
+(2, 'DEF456', 'Chevrolet', 'Onix', 2021, '3GNCJKSB0JS555555', 'Rojo', 'https://images.unsplash.com/photo-1542282088-fe8426682b8f?auto=format&fit=crop&w=800&q=80'),
+(2, 'GHI012', 'Hyundai', 'Accent', 2020, 'KMHCJ4ACxAU000000', 'Azul', 'https://images.unsplash.com/photo-1503376710356-69865111a33a?auto=format&fit=crop&w=800&q=80'),
+(3, 'JKL345', 'Kia', 'Rio', 2022, 'KNDJC2AU4N7000001', 'Verde', 'https://images.unsplash.com/photo-1580273916550-e323be2ae537?auto=format&fit=crop&w=800&q=80'),
 (3, 'MNO678', 'Nissan', 'Versa', 2021, '3N1CN7APxNL800000', 'Gris');
 
 -- Insertar repuestos OEM (10 piezas)

@@ -125,4 +125,22 @@ class PDFService
         
         return base64_encode($dompdf->output());
     }
+
+    /**
+     * Genera un PDF del inventario de repuestos
+     */
+    public static function generarInventarioPdf(array $repuestos): string
+    {
+        $dompdf = self::initDompdf();
+        $html = self::renderView('inventario_pdf.php', [
+            'repuestos' => $repuestos,
+            'fecha' => date('d/m/Y H:i')
+        ]);
+        
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'landscape'); // Mejor landscape para tablas anchas
+        $dompdf->render();
+        
+        return base64_encode($dompdf->output());
+    }
 }

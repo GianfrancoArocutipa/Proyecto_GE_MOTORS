@@ -36,5 +36,20 @@ export const reporteService = {
       throw new Error(msg)
     }
     return response.blob()
+  },
+
+  async exportarPdfInventario() {
+    const response = await fetch(`${apiBase}/reportes/pdf/inventario`, {
+      headers: { Authorization: `Bearer ${apiService.getToken()}` }
+    })
+    if (!response.ok) {
+      let msg = 'Error al exportar inventario a PDF'
+      try {
+        const err = await response.json()
+        msg = err.mensaje || msg
+      } catch (_) { /* response was not JSON */ }
+      throw new Error(msg)
+    }
+    return response.blob()
   }
 }

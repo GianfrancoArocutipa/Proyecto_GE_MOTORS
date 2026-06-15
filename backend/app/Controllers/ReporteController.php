@@ -350,15 +350,18 @@ class ReporteController
         ');
         $repuestos = $stmt->fetchAll();
 
-        // Generar CSV
+        // Generar CSV (Compatible con Excel)
         $output = fopen('php://output', 'w');
         header('Content-Type: text/csv; charset=utf-8');
         header('Content-Disposition: attachment; filename=inventario_gem_motors.csv');
         
-        // Encabezados
-        fputcsv($output, ['Código OEM', 'Nombre', 'Descripción', 'Categoría', 'Marca Fabricante', 'Stock', 'Stock Mínimo', 'Precio Unitario']);
+        // Agregar BOM UTF-8 para que Excel reconozca los acentos y caracteres especiales
+        fputs($output, chr(0xEF).chr(0xBB).chr(0xBF));
         
-        // Datos
+        // Encabezados usando punto y coma
+        fputcsv($output, ['Código OEM', 'Nombre', 'Descripción', 'Categoría', 'Marca Fabricante', 'Stock', 'Stock Mínimo', 'Precio Unitario'], ';');
+        
+        // Datos usando punto y coma
         foreach ($repuestos as $repuesto) {
             fputcsv($output, [
                 $repuesto['codigo_oem'],
@@ -369,10 +372,42 @@ class ReporteController
                 $repuesto['stock'],
                 $repuesto['stock_minimo'],
                 number_format((float)$repuesto['precio_unitario'], 2)
-            ]);
+            ], ';');
         }
         
         fclose($output);
         exit;
+    }
+
+    /**
+     * Exportar inventario a PDF
+     * GET /api/reportes/pdf/inventario
+     */
+    public static function exportarPdfInventario(): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+            App::jsonResponse(false, null, 'Método no permitido', 405);
+            return;
+        }
+
+        AuthMiddleware::requireAuth();
+        RolMiddleware::checkRole();
+
+        $db = \GemMotors\Config\Database::getInstance();
+        $stmt = $db->query('
+            SELECT * FROM repuestos ORDER BY nombre
+        ');
+        $repuestos = $stmt->fetchAll();
+
+        try {
+            $pdfContent = \GemMotors\Services\PDFService::generarInventarioPdf($repuestos);
+            
+            header('Content-Type: application/pdf');
+            header('Content-Disposition: attachment; filename="inventario_gem_motors.pdf"');
+            echo base64_decode($pdfContent);
+            exit;
+        } catch (\Exception $e) {
+            App::jsonResponse(false, null, 'Error al generar PDF: ' . $e->getMessage(), 500);
+        }
     }
 }

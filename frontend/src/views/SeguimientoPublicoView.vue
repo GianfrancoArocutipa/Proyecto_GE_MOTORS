@@ -185,13 +185,19 @@
 
         <!-- Evidencias -->
         <div v-if="evidencias?.length > 0" class="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
-          <h3 class="text-lg font-bold text-gray-800 mb-4">Evidencias Fotográficas</h3>
-          <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            <div v-for="evidencia in evidencias" :key="evidencia.id" class="group relative rounded-xl overflow-hidden aspect-square bg-gray-100 shadow-sm">
-              <img v-if="evidencia.tipo === 'imagen'" :src="evidencia.url" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
-              <video v-else :src="evidencia.url" class="w-full h-full object-cover" muted loop onmouseover="this.play()" onmouseout="this.pause()"></video>
-              <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-3">
-                <p class="text-white text-xs font-medium truncate">{{ evidencia.etiqueta || 'Evidencia' }}</p>
+          <h3 class="text-lg font-bold text-gray-800 mb-6">Evidencias Fotográficas</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div v-for="evidencia in evidencias" :key="evidencia.id" class="bg-gray-50 rounded-xl overflow-hidden shadow-sm border border-gray-100 flex flex-col group">
+              <div class="relative h-48 bg-gray-200">
+                <img v-if="evidencia.tipo === 'imagen' || evidencia.tipo === 'foto'" :src="evidencia.url" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
+                <video v-else :src="evidencia.url" class="w-full h-full object-cover" controls></video>
+                <div class="absolute top-3 left-3">
+                  <span class="inline-flex px-3 py-1 text-xs font-extrabold rounded-full bg-indigo-600 text-white uppercase tracking-wider shadow-md">{{ evidencia.etiqueta }}</span>
+                </div>
+              </div>
+              <div class="p-5 flex-grow bg-white">
+                <p class="text-sm text-gray-700 leading-relaxed font-medium">{{ evidencia.descripcion || 'Sin descripción adicional.' }}</p>
+                <p class="text-xs text-gray-400 mt-3 font-semibold">{{ formatDateTime(evidencia.created_at) }}</p>
               </div>
             </div>
           </div>

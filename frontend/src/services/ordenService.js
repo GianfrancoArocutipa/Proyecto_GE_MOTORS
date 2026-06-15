@@ -34,11 +34,15 @@ export const ordenService = {
   },
 
   getEvidencias(id) {
-    return apiService.get(`/ordenes/${id}/evidencias`)
+    return apiService.get(`/evidencias/orden/${id}`)
   },
 
   crearEvidencia(id, data) {
-    return apiService.post(`/ordenes/${id}/evidencias`, data)
+    return apiService.post(`/evidencias`, { orden_id: id, ...data })
+  },
+
+  actualizarEvidencia(evidenciaId, data) {
+    return apiService.put(`/evidencias/${evidenciaId}`, data)
   },
 
   getRepuestos(id) {
@@ -54,7 +58,7 @@ export const ordenService = {
   },
 
   eliminarEvidencia(ordenId, evidenciaId) {
-    return apiService.delete(`/ordenes/${ordenId}/evidencias/${evidenciaId}`)
+    return apiService.delete(`/evidencias/${evidenciaId}`)
   },
 
   getPorCodigo(codigo) {

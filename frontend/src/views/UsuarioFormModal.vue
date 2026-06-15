@@ -7,9 +7,15 @@
     </template>
 
     <form @submit.prevent="handleSubmit" class="space-y-4">
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Nombre Completo</label>
-        <input v-model="form.nombre" type="text" class="w-full px-3 py-2 border rounded-md" required />
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Nombre</label>
+          <input v-model="form.nombre" type="text" class="w-full px-3 py-2 border rounded-md" required />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Apellido</label>
+          <input v-model="form.apellido" type="text" class="w-full px-3 py-2 border rounded-md" required />
+        </div>
       </div>
 
       <div>
@@ -65,6 +71,7 @@ const emit = defineEmits(['update:show', 'saved', 'close'])
 
 const form = reactive({
   nombre: '',
+  apellido: '',
   email: '',
   rol: '',
   activo: true
@@ -83,6 +90,7 @@ const { loading, execute: saveUserAction } = useDataFetch(
 watch(() => props.usuario, (val) => {
   if (val) {
     form.nombre = val.nombre
+    form.apellido = val.apellido || ''
     form.email = val.email
     form.rol = val.rol
     form.activo = val.activo
@@ -109,6 +117,7 @@ function handleClose() {
 
 function resetForm() {
   form.nombre = ''
+  form.apellido = ''
   form.email = ''
   form.rol = ''
   form.activo = true

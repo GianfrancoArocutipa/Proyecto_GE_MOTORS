@@ -15,6 +15,7 @@ class Vehiculo
     public ?int $anio; // Ahora puede ser nulo
     public ?string $vin;
     public ?string $color;
+    public ?string $foto_url;
     public string $created_at;
 
     public function __construct(
@@ -26,6 +27,7 @@ class Vehiculo
         ?int $anio, // Ahora puede ser nulo
         ?string $vin,
         ?string $color,
+        ?string $foto_url,
         string $created_at
     ) {
         $this->id = $id;
@@ -36,6 +38,7 @@ class Vehiculo
         $this->anio = $anio;
         $this->vin = $vin;
         $this->color = $color;
+        $this->foto_url = $foto_url;
         $this->created_at = $created_at;
     }
 
@@ -103,7 +106,7 @@ class Vehiculo
     public static function create(array $data): self
     {
         $db = Database::getInstance();
-        $stmt = $db->prepare('INSERT INTO vehiculos (cliente_id, placa, marca, modelo, anio, vin, color) VALUES (:cliente_id, :placa, :marca, :modelo, :anio, :vin, :color)');
+        $stmt = $db->prepare('INSERT INTO vehiculos (cliente_id, placa, marca, modelo, anio, vin, color, foto_url) VALUES (:cliente_id, :placa, :marca, :modelo, :anio, :vin, :color, :foto_url)');
         $stmt->execute([
             'cliente_id' => $data['cliente_id'],
             'placa' => $data['placa'],
@@ -111,7 +114,8 @@ class Vehiculo
             'modelo' => $data['modelo'],
             'anio' => $data['anio'],
             'vin' => $data['vin'] ?? null,
-            'color' => $data['color'] ?? null
+            'color' => $data['color'] ?? null,
+            'foto_url' => $data['foto_url'] ?? null
         ]);
 
         $id = (int)$db->lastInsertId();
@@ -125,6 +129,7 @@ class Vehiculo
             $data['anio'],
             $data['vin'] ?? null,
             $data['color'] ?? null,
+            $data['foto_url'] ?? null,
             date('Y-m-d H:i:s')
         );
     }
@@ -133,7 +138,7 @@ class Vehiculo
     public function update(array $data): void
     {
         $db = Database::getInstance();
-        $stmt = $db->prepare('UPDATE vehiculos SET cliente_id = :cliente_id, placa = :placa, marca = :marca, modelo = :modelo, anio = :anio, vin = :vin, color = :color WHERE id = :id');
+        $stmt = $db->prepare('UPDATE vehiculos SET cliente_id = :cliente_id, placa = :placa, marca = :marca, modelo = :modelo, anio = :anio, vin = :vin, color = :color, foto_url = :foto_url WHERE id = :id');
         $stmt->execute([
             'id' => $this->id,
             'cliente_id' => $data['cliente_id'] ?? $this->cliente_id,
@@ -142,7 +147,8 @@ class Vehiculo
             'modelo' => $data['modelo'] ?? $this->modelo,
             'anio' => $data['anio'] ?? $this->anio,
             'vin' => $data['vin'] ?? $this->vin,
-            'color' => $data['color'] ?? $this->color
+            'color' => $data['color'] ?? $this->color,
+            'foto_url' => $data['foto_url'] ?? $this->foto_url
         ]);
 
         // Actualizar las propiedades
@@ -153,6 +159,7 @@ class Vehiculo
         $this->anio = $data['anio'] ?? $this->anio;
         $this->vin = $data['vin'] ?? $this->vin;
         $this->color = $data['color'] ?? $this->color;
+        $this->foto_url = $data['foto_url'] ?? $this->foto_url;
     }
 
     // Eliminar vehículo
@@ -175,6 +182,7 @@ class Vehiculo
             $row['anio'] !== null ? (int)$row['anio'] : null, // Manejar anio como nulo si viene de la BD
             $row['vin'],
             $row['color'],
+            $row['foto_url'] ?? null,
             $row['created_at']
         );
     }

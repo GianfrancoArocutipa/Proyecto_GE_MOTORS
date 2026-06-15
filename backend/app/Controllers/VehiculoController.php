@@ -44,6 +44,7 @@ class VehiculoController
                 'anio' => $v->anio,
                 'vin' => $v->vin,
                 'color' => $v->color,
+                'foto_url' => $v->foto_url,
                 'created_at' => $v->created_at,
                 'cliente' => $cliente ? [
                     'id' => $cliente->id,
@@ -80,6 +81,7 @@ class VehiculoController
             'anio' => $vehiculo->anio,
             'vin' => $vehiculo->vin,
             'color' => $vehiculo->color,
+            'foto_url' => $vehiculo->foto_url,
             'created_at' => $vehiculo->created_at,
             'cliente' => $cliente ? [
                 'id' => $cliente->id,
@@ -163,7 +165,8 @@ class VehiculoController
                 'cliente_id' => (int)$clienteId,
                 'anio'       => !empty($input['anio']) ? (int)$input['anio'] : null,
                 'vin'        => !empty($input['vin']) ? strtoupper(trim($input['vin'])) : null,
-                'color'      => !empty($input['color']) ? trim($input['color']) : null
+                'color'      => !empty($input['color']) ? trim($input['color']) : null,
+                'foto_url'   => !empty($input['foto_url']) ? trim($input['foto_url']) : null
             ]);
 
             App::jsonResponse(true, [

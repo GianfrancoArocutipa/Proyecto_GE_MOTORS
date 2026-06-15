@@ -131,7 +131,7 @@ class SeguimientoController
         // Validar que el presupuesto pertenezca al cliente de este código
         $orden = OrdenTrabajo::find($presupuesto->orden_id);
         if ($orden->cliente_id !== (int)$clienteId) {
-            App::jsonResponse(false, null, 'El presupuesto no pertenece a este código de seguimiento', 403);
+            App::jsonResponse(false, null, 'El presupuesto no pertenece a este código de seguimiento. Orden_cliente_id=' . $orden->cliente_id . ', clienteId=' . $clienteId, 403);
             return;
         }
 
@@ -147,7 +147,7 @@ class SeguimientoController
 
         try {
             if ($respuesta === 'aprobar') {
-                $presupuesto->aprobar();
+                $presupuesto->responder('aprobado');
                 // Notificar al mecánico
                 \GemMotors\Services\NotificacionService::notificarCambioEstado($orden->id, 'presupuesto_aprobado');
             } else {
@@ -155,7 +155,7 @@ class SeguimientoController
                     App::jsonResponse(false, null, 'Se requiere un motivo para rechazar', 400);
                     return;
                 }
-                $presupuesto->rechazar($motivoRechazo);
+                $presupuesto->responder('rechazado', $motivoRechazo);
             }
 
             App::jsonResponse(true, [

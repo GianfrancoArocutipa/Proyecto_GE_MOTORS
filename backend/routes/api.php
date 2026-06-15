@@ -235,15 +235,15 @@ elseif (preg_match('#evidencias(?:/(.*))?#', $uri, $matches) && $method === 'GET
 }
 
 // Rutas de Presupuestos
-elseif (preg_match('#presupuestos(?:/(.*))?#', $uri, $matches) && $method === 'GET') {
-    if (isset($matches[1]) && preg_match('#presupuestos/orden/(\d+)#', $uri, $ordMatches)) {
+elseif (preg_match('#^presupuestos(?:/(.*))?#', $uri, $matches) && $method === 'GET') {
+    if (isset($matches[1]) && preg_match('#^presupuestos/orden/(\d+)#', $uri, $ordMatches)) {
         // GET /api/presupuestos/orden/{id}
         callController('PresupuestoController', 'getByOrden', [(int)$ordMatches[1]]);
     }
-} elseif (preg_match('#presupuestos$#', $uri) && $method === 'POST') {
+} elseif (preg_match('#^presupuestos$#', $uri) && $method === 'POST') {
     // POST /api/presupuestos
     callController('PresupuestoController', 'create');
-} elseif (preg_match('#presupuestos/(\d+)/respuesta#', $uri, $matches) && $method === 'PUT') {
+} elseif (preg_match('#^presupuestos/(\d+)/respuesta#', $uri, $matches) && $method === 'PUT') {
     // PUT /api/presupuestos/{id}/respuesta
     callController('PresupuestoController', 'responder', [(int)$matches[1]]);
 }
